@@ -1,18 +1,14 @@
-// /api/varejo/recebimentos.js
-export default async function handler(req, res) {
-  const { data, estab } = req.query;
-  const baseUrl = process.env.VAREJO_FACIL_URL;
-  const clientId = process.env.VAREJO_FACIL_CLIENT_ID;
-  const clientSecret = process.env.VAREJO_FACIL_CLIENT_SECRET;
+// 1. Obter token com email/senha
+const tokenResp = await fetch(`${baseUrl}/auth/token/`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    email: process.env.VAREJO_FACIL_EMAIL,
+    password: process.env.VAREJO_FACIL_PASSWORD
+  })
+});
+const { access } = await tokenResp.json();
 
-  try {
-    // 1. Obter token
-    const tokenResp = await fetch(`${baseUrl}/auth/app/token/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
-    });
-    const { access } = await tokenResp.json();
 
     // 2. Se não tiver estab, buscar lista de estabelecimentos
     if (!estab) {
