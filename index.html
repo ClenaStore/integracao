@@ -62,7 +62,6 @@
       font-weight: bold;
       margin-top: 20px;
     }
-    /* overlay */
     #overlay {
       display: none;
       position: fixed;
@@ -81,8 +80,12 @@
   <header>Recebimentos</header>
 
   <div class="filtros">
-    Data Inicial: <input type="date" id="dataInicial">
-    Data Final: <input type="date" id="dataFinal">
+    <label>Data Inicial:</label> <input type="date" id="dataInicial">
+    <label>Hora Inicial:</label> <input type="time" id="horaInicial" value="08:00">
+    <br>
+    <label>Data Final:</label> <input type="date" id="dataFinal">
+    <label>Hora Final:</label> <input type="time" id="horaFinal" value="23:59">
+    <br>
     <button onclick="carregar()">Filtrar</button>
   </div>
 
@@ -101,7 +104,8 @@
   </div>
 
   <script>
-    // emojis por categoria
+    const API_URL = "/api";
+
     const categorias = {
       "dinheiro": "💵",
       "crédito": "💳",
@@ -122,56 +126,32 @@
       "outros": "❇️"
     };
 
-    // mapeamento de finalizadoras por ID
-    const finalizadoras = {
-      1:"dinheiro",2:"crédito",3:"débito",4:"pix",5:"consumo interno",12:"débito",
-      13:"pix",14:"dinheiro",15:"pix",16:"pix",17:"crédito",18:"débito",
-      19:"online",20:"boleto",21:"boleto",22:"boleto",23:"boleto",24:"boleto",
-      25:"boleto",26:"crediário",27:"consumo sócio",28:"boleto",29:"voucher",
-      30:"online",31:"online",32:"online",33:"voucher",34:"marketing",35:"voucher",36:"outros"
-    };
-
-    // Login via backend (usa credenciais salvas no Vercel)
-    async function login() {
-      const resp = await fetch(`/api/login`, { method: "POST" });
-      if (!resp.ok) throw new Error("Falha no login");
-      const data = await resp.json();
-      return data.accessToken;
-    }
-
-    // Buscar recebimentos via backend
-    async function buscarRecebimentos(token, ini, fim) {
-      const url = `/api/recebimentos?dataInicial=${ini}&dataFinal=${fim}`;
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("Erro na API");
-      return await resp.json();
-    }
-
-    // Processar dados
-    function processar(json) {
-      const result = { restaurante:{}, emporio:{}, almoco:0 };
-
-      json.items.forEach(item => {
-        const caixa = parseInt(item.numeroCaixa);
-        const destino = (caixa >= 1 && caixa <= 4) ? "emporio" : "restaurante";
-
-        const hora = new Date(item.dataHoraFechamentoRecebimento).getHours();
-        if (hora >= 3 && hora <= 16) result.almoco += item.valor;
-
-        item.finalizacoes.forEach(fin => {
-          const cat = finalizadoras[fin.finalizadoraId] || "outros";
-          if (!result[destino][cat]) result[destino][cat] = 0;
-          result[destino][cat] += fin.valor;
-        });
-      });
-      return result;
-    }
-
-    // Renderizar resultados
-    function render(dados) {
+    async function carregar() {
+      document.getElementById("overlay").style.display = "flex";
       document.getElementById("erro").textContent = "";
+      try {
+        const dataIni = document.getElementById("dataInicial").value;
+        const dataFim = document.getElementById("dataFinal").value;
+        const horaIni = document.getElementById("horaInicial").value;
+        const horaFim = document.getElementById("horaFinal").value;
 
-      ["restaurante","emporio"].forEach(sec => {
+        if (!dataIni || !dataFim) throw new Error("Informe as datas");
+
+        const url = `${API_URL}/recebimentos?dataIni=${dataIni}T${horaIni}:00&dataFim=${dataFim}T${horaFim}:00`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Erro ao buscar dados");
+
+        const dados = await res.json();
+        render(dados);
+      } catch (err) {
+        document.getElementById("erro").textContent = err.message;
+      } finally {
+        document.getElementById("overlay").style.display = "none";
+      }
+    }
+
+    function render(dados) {
+      ["restaurante", "emporio"].forEach(sec => {
         const div = document.getElementById(`${sec}-valores`);
         div.innerHTML = "";
         const catVals = dados[sec];
@@ -179,38 +159,13 @@
           if (catVals[cat] > 0) {
             const linha = document.createElement("div");
             linha.className = "linha";
-            linha.innerHTML = `${categorias[cat]||"❇️"} <span>${cat.toUpperCase()}:</span> R$ ${catVals[cat].toFixed(2)}`;
+            linha.innerHTML = `${categorias[cat] || "❇️"} <span>${cat.toUpperCase()}:</span> R$ ${catVals[cat].toFixed(2)}`;
             div.appendChild(linha);
           }
         });
       });
-
-      if (dados.almoco > 0) {
-        const extra = document.createElement("div");
-        extra.className = "linha";
-        extra.innerHTML = `🍽️ <b>ALMOÇO MERCATTO:</b> R$ ${dados.almoco.toFixed(2)}`;
-        document.getElementById("restaurante-valores").appendChild(extra);
-      }
     }
 
-    // Carregar fluxo completo
-    async function carregar() {
-      document.getElementById("overlay").style.display = "flex";
-      try {
-        const ini = document.getElementById("dataInicial").value;
-        const fim = document.getElementById("dataFinal").value;
-        const token = await login();
-        const dados = await buscarRecebimentos(token, ini, fim);
-        const proc = processar(dados);
-        render(proc);
-      } catch(err) {
-        document.getElementById("erro").textContent = err.message;
-      } finally {
-        document.getElementById("overlay").style.display = "none";
-      }
-    }
-
-    // data inicial e final default = hoje
     const hoje = new Date().toISOString().split("T")[0];
     document.getElementById("dataInicial").value = hoje;
     document.getElementById("dataFinal").value = hoje;
