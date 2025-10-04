@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Consulta Recebimentos Mercatto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0b1220;--ink:#e5f0ff;--muted:#a8b3c7;--teal:#06b6d4; }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui;padding:20px;}
+  h1{text-align:center;margin-bottom:20px;color:var(--teal);}
+  .controls{text-align:center;margin-bottom:20px;}
+  input,button{padding:8px 10px;margin:4px;border-radius:6px;border:none;font-size:14px;}
+  button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
+  #cards{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+  .card{background:#101827;padding:14px 22px;border-radius:10px;border:1px solid rgba(255,255,255,.06);min-width:220px;text-align:center}
+  .card h2{margin:0 0 4px;color:var(--muted);font-size:.9rem}
+  .card p{margin:0;font-weight:800;font-size:1.35rem}
+  #layout{display:flex;gap:40px;align-items:flex-start}
+  #resumo{width:35%;white-space:pre;line-height:1.5;font-size:14px}
+  #saida{flex:1;background:#111a2e;padding:20px;border-radius:8px;overflow:auto;font-size:12px;color:#00ffaa}
+  @media(max-width:900px){#layout{flex-direction:column}#resumo{width:100%}}
+</style>
+</head>
+<body>
+  <h1>Consulta Recebimentos Mercatto</h1>
+
+  <div class="controls">
+    <input type="date" id="dataInicio">
+    <input type="time" id="horaInicio" value="00:00">
+    <input type="date" id="dataFim">
+    <input type="time" id="horaFim" value="23:59">
+    <button onclick="consultar()">Consultar</button>
+  </div>
+
+  <div id="cards">
+    <div class="card"><h2>Total Geral</h2><p id="totalGeral">R$ 0,00</p></div>
+    <div class="card"><h2>Restaurante Mercatto</h2><p id="totalRestaurante">R$ 0,00</p></div>
+    <div class="card"><h2>Empório Mercatto</h2><p id="totalEmporio">R$ 0,00</p></div>
+  </div>
+
+  <div id="layout">
+    <div id="resumo">Aguardando consulta...</div>
+    <pre id="saida">Aguardando consulta...</pre>
+  </div>
+
+<script>
+const formasPagamento=[{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"12","descricao":"PGTO ONLINE DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"34","descricao":"MARKETING"},{"id":"28","descricao":"BOLETO DELICIA INDUS"},{"id":"29","descricao":"VOUCHER"},{"id":"10","descricao":"BOLETO"},{"id":"30","descricao":"PGT ONLINE DELIVERY"},{"id":"14","descricao":"PGTO ONLINE DINHEIRO"},{"id":"13","descricao":"PGTO ONLINE PIX"},{"id":"11","descricao":"PGTO ONLINE CREDITO"},{"id":"4","descricao":"PIX CNPJ"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"33","descricao":"VOUCHER POS"},{"id":"1","descricao":"DINHEIRO"},{"id":"35","descricao":"VALE MERCATTO"},{"id":"36","descricao":"PREJUIZO"},{"id":"16","descricao":"PIX TEF"},{"id":"31","descricao":"PGT ONLINE IFOOD"},{"id":"20","descricao":"BOLETO FAMILY PRODUT"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"22","descricao":"BOLETO DELICIA PRODU"},{"id":"24","descricao":"BOLETO ALL TIME CHOP"},{"id":"21","descricao":"BOLETO FOODS TIME"},{"id":"23","descricao":"BOLETO MEOS GOURMET"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"}];
+
+const grupos={
+  "crédito":["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
+  "débito":["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
+  "pix":["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
+  "online":["pagamento online","pagamentos online","refeicao","cart alimentacao"],
+  "consumo interno":["funcionario","convenio empresa","consumo funcionarios","consumo musicos"],
+  "boleto":["boleto"],
+  "crediário":["crediario","crediario clientes"],
+  "voucher":["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa"],
+  "dinheiro":["dinheiro","pgto online dinheiro"],
+  "bonificação":["bonificacao"],
+  "catálogo delivery":["catalogo delivery","catálogo delivery"],
+  "consumo sócio":["socio","consumo sócio","consumo socio"],
+  "marketing":["marketing"],
+  "transferência bancária":["transferencia bancar","transferencia bancaria"],
+  "erros garçom":["erros garcons"],
+  "sem faturamento":["sem faturamento"],
+  "outros":[]
+};
+
+const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const normaliza = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function encontrarGrupo(desc){const d=normaliza(desc);for(const [g,ts] of Object.entries(grupos)){if(ts.some(t=>d.includes(t))) return g}return "outros"}
+
+function valorFinalizacaoLiquido(f){
+  const v  = Number(f.valor||0);
+  const tr = Number(f.troco||0);
+  const td = Number(f.trocoDoacao||0);
+  const dm = Number(f.descontoMoeda||0);
+  const jp = Number(f.jurosPlano||0);
+  return v - tr - td - dm + jp;
+}
+
+function toDateLocal(v){
+  const hhmm = String(v.hora||"0000").padStart(4,"0");
+  return new Date(`${v.data}T${hhmm.slice(0,2)}:${hhmm.slice(2)}:00`);
+}
+
+async function consultar(){
+  const dataInicio = document.getElementById('dataInicio').value;
+  const dataFim    = document.getElementById('dataFim').value;
+  const horaInicio = document.getElementById('horaInicio').value;
+  const horaFim    = document.getElementById('horaFim').value;
+  const saida  = document.getElementById('saida');
+  const resumo = document.getElementById('resumo');
+
+  saida.textContent  = "🔄 Buscando dados...";
+  resumo.textContent = "🔄 Processando...";
+
+  try{
+    // 1) Login
+    const loginResp = await fetch('/api/login',{method:'POST'});
+    const {accessToken} = await loginResp.json();
+
+    // 2) Busca de dados
+    const resp = await fetch('/api/recebimentos',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:accessToken,dataInicio,dataFim,horaInicio,horaFim})
+    });
+    const raw = await resp.json();
+    saida.textContent = JSON.stringify(raw,null,2);
+
+    const vendas = raw.items || [];
+
+    // 3) Filtro por data/hora local
+    const start = new Date(`${dataInicio}T${horaInicio}:00`);
+    const end   = new Date(`${dataFim}T${horaFim}:59`);
+    const filtradas = vendas.filter(v=>{
+      const d = toDateLocal(v);
+      return d >= start && d <= end;
+    });
+
+    // 4) Totais gerais
+    let totalGeral=0,totalEmporio=0,totalRestaurante=0;
+    filtradas.forEach(v=>{
+      const cx=parseInt(v.numeroCaixa||"0",10);
+      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
+      const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
+      totalGeral+=somaCupom;
+      if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
+      if(cx>5) totalRestaurante+=somaCupom;
+    });
+
+    document.getElementById('totalGeral').innerText=brl(totalGeral);
+    document.getElementById('totalEmporio').innerText=brl(totalEmporio);
+    document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
+
+    // 5) Resumo por caixa
+    const caixas={};
+    filtradas.forEach(v=>{
+      const cx=v.numeroCaixa||"000";
+      if(!caixas[cx]) caixas[cx]={};
+      (v.finalizacoes||[]).forEach(f=>{
+        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
+        const nome=forma?forma.descricao:"Desconhecida";
+        const grupo=encontrarGrupo(nome);
+        const val=valorFinalizacaoLiquido(f);
+        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
+        caixas[cx][grupo].total+=val;
+        caixas[cx][grupo].count++;
+      });
+    });
+
+    const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
+    let html='';
+    for(const cx of caixasOrdenadas){
+      html+=`Caixa ${cx}\n`;
+      let somaCaixa=0;
+      for(const [g,info] of Object.entries(caixas[cx])){
+        html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
+        somaCaixa+=info.total;
+      }
+      // 💰 soma total do caixa
+      html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
+    }
+    resumo.textContent=html||'Nenhum dado no recorte selecionado.';
+  }catch(e){
+    saida.textContent='Erro: '+e.message;
+    resumo.textContent='Erro: '+e.message;
+  }
+}
+</script>
+
+</body>
+</html>
