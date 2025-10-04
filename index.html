@@ -101,8 +101,6 @@
   </div>
 
   <script>
-    const API_URL = "https://mercatto.varejofacil.com/api";
-
     // emojis por categoria
     const categorias = {
       "dinheiro": "💵",
@@ -133,32 +131,23 @@
       30:"online",31:"online",32:"online",33:"voucher",34:"marketing",35:"voucher",36:"outros"
     };
 
+    // Login via backend (usa credenciais salvas no Vercel)
     async function login() {
-      const resp = await fetch(`${API_URL}/auth`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          username: "NALBERT SOUZA",
-          password: "99861"
-        })
-      });
+      const resp = await fetch(`/api/login`, { method: "POST" });
       if (!resp.ok) throw new Error("Falha no login");
       const data = await resp.json();
       return data.accessToken;
     }
 
+    // Buscar recebimentos via backend
     async function buscarRecebimentos(token, ini, fim) {
-      const url = `${API_URL}/v1/pdv/recebimentos?dataInicial=${ini}&dataFinal=${fim}&start=0&count=1000`;
-      const resp = await fetch(url, {
-        headers: {
-          "Authorization": token,
-          "Accept": "application/json"
-        }
-      });
+      const url = `/api/recebimentos?dataInicial=${ini}&dataFinal=${fim}`;
+      const resp = await fetch(url);
       if (!resp.ok) throw new Error("Erro na API");
       return await resp.json();
     }
 
+    // Processar dados
     function processar(json) {
       const result = { restaurante:{}, emporio:{}, almoco:0 };
 
@@ -178,6 +167,7 @@
       return result;
     }
 
+    // Renderizar resultados
     function render(dados) {
       document.getElementById("erro").textContent = "";
 
@@ -203,6 +193,7 @@
       }
     }
 
+    // Carregar fluxo completo
     async function carregar() {
       document.getElementById("overlay").style.display = "flex";
       try {
