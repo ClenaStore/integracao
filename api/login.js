@@ -1,27 +1,28 @@
-export const config = { runtime: 'edge' };
+export default async function handler(req, res) {
+  if (req.method === "POST") {
+    try {
+      const response = await fetch("https://mercatto.varejofacil.com/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: process.env.VAREJO_USER,
+          password: process.env.VAREJO_PASS
+        })
+      });
 
-export default async function handler(req) {
-  const VAREJO_URL  = process.env.VAREJO_URL;
-  const VAREJO_USER = process.env.VAREJO_USER;
-  const VAREJO_PASS = process.env.VAREJO_PASS;
+      const data = await response.json();
 
-  if (!VAREJO_URL || !VAREJO_USER || !VAREJO_PASS) {
-    return new Response(JSON.stringify({ error: 'Missing env vars' }), { status: 500 });
-  }
-
-  try {
-    const r = await fetch(`${VAREJO_URL}/api/auth`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept':'application/json' },
-      body: JSON.stringify({ username: VAREJO_USER, password: VAREJO_PASS })
-    });
-    if (!r.ok) {
-      const t = await r.text();
-      return new Response(JSON.stringify({ error: 'auth_failed', detail: t }), { status: r.status });
+      if (data.accessToken) {
+        // salva o token em memória/retorna
+        return res.status(200).json({ token: data.accessToken });
+      } else {
+        return res.status(401).json({ error: "Login falhou", data });
+      }
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
     }
-    const json = await r.json();
-    return new Response(JSON.stringify(json), { status: 200, headers: { 'Content-Type':'application/json' }});
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'auth_exception', detail: String(e) }), { status: 500 });
+  } else {
+    res.setHeader("Allow", ["POST"]);
+    res.status(405).end(`Método ${req.method} não permitido`);
   }
 }
