@@ -11,19 +11,27 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Token de autenticação ausente" });
     }
 
-    // Monta base da URL (a API do Varejo Fácil usa paginação via start e count)
-    const baseURL = `https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais`;
-    const query = `q=dataVenda=ge=${dataInicio}T${horaInicio}:00;dataVenda=le=${dataFim}T${horaFim}:59`;
-    const count = 200;
+    // 🔧 Formata datas e horas no padrão ISO esperado pela API
+    // Exemplo: 2025-10-01T08:00:00
+    const inicioFormatado = `${dataInicio}T${horaInicio}:00`;
+    const fimFormatado = `${dataFim}T${horaFim}:59`;
 
+    // Garante que o formato tenha 2 dígitos
+    const normalizar = (v) => (v.length === 1 ? `0${v}` : v);
+
+    console.log("🔍 Filtro de datas e horas:");
+    console.log("Início:", inicioFormatado);
+    console.log("Fim:", fimFormatado);
+
+    // Monta a query da API com o formato exato usado pelo Varejo Fácil
+    const baseURL = "https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais";
+    const count = 200;
     let start = 0;
     let allItems = [];
-    let loopCount = 0;
 
-    // 🔁 Loop que busca todas as páginas até acabar
     while (true) {
-      const url = `${baseURL}?start=${start}&${query}&count=${count}`;
-      console.log(`🔎 Buscando página ${loopCount + 1} (${url})`);
+      const url = `${baseURL}?start=${start}&count=${count}&q=dataVenda=ge=${inicioFormatado};dataVenda=le=${fimFormatado}`;
+      console.log(`📡 Buscando página: ${url}`);
 
       const response = await fetch(url, {
         headers: {
@@ -33,27 +41,29 @@ export default async function handler(req, res) {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro na requisição: ${response.status} - ${errorText}`);
+        const erro = await response.text();
+        console.error("❌ Erro na API:", erro);
+        return res.status(response.status).json({ error: erro });
       }
 
       const json = await response.json();
-      if (!json.items || json.items.length === 0) break;
+
+      if (!json.items || json.items.length === 0) {
+        console.log("📭 Nenhum resultado encontrado nesta página.");
+        break;
+      }
 
       allItems = allItems.concat(json.items);
       start += count;
-      loopCount++;
 
-      // Se vier menos de 200, acabou
-      if (json.items.length < count) break;
-
-      // Evita loop infinito (limite de segurança)
-      if (loopCount > 200) break;
+      if (json.items.length < count) break; // terminou
+      if (start > 5000) break; // segurança
     }
 
     console.log(`✅ Total de cupons retornados: ${allItems.length}`);
 
     res.status(200).json({
+      start: 0,
       total: allItems.length,
       items: allItems,
     });
