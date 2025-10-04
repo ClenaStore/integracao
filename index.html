@@ -7,75 +7,47 @@
   <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4727/4727490.png">
   <style>
     :root {
-      --bg:#f6f8fb; --card:#fff; --text:#0f172a; --muted:#64748b;
-      --brand:#1d4ed8; --ok:#16a34a; --error:#ef4444; --radius:14px;
-      --shadow:0 4px 16px rgba(0,0,0,0.1);
+      --bg:#f5f7fa; --card:#fff; --ink:#0f172a;
+      --brand:#1d4ed8; --ok:#16a34a; --error:#dc2626;
+      --radius:14px; --shadow:0 4px 16px rgba(0,0,0,0.1);
     }
-    body {
-      margin:0; font-family:Inter,system-ui,Arial;
-      background:var(--bg); color:var(--text);
+    body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--ink)}
+    header{
+      background:var(--brand);color:white;text-align:center;padding:14px;
+      display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;font-size:1.1rem
     }
-    header {
-      background:var(--brand); color:white; padding:14px;
-      text-align:center; font-weight:600; font-size:1.2rem;
-      display:flex; align-items:center; justify-content:center; gap:8px;
+    header img{height:22px}
+    main{
+      max-width:950px;margin:40px auto;background:var(--card);
+      border-radius:var(--radius);box-shadow:var(--shadow);padding:30px;text-align:center
     }
-    header img { height:22px; }
-    main {
-      max-width:900px; margin:40px auto; background:var(--card);
-      padding:30px; border-radius:var(--radius); box-shadow:var(--shadow);
-      text-align:center;
-    }
-    .inputs { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px; }
-    input, button {
-      padding:10px 14px; border-radius:var(--radius); border:1px solid #d1d5db;
-      font-size:15px;
-    }
-    button {
-      background:var(--brand); color:white; border:none; cursor:pointer; font-weight:600;
-      transition:.2s;
-    }
-    button:hover { opacity:0.9; }
-    .msg { color:var(--error); margin-bottom:12px; font-weight:600; }
-    .cards {
-      display:grid; grid-template-columns:1fr 1fr; gap:20px; justify-items:center;
-    }
-    .card {
-      background:var(--card); border-radius:var(--radius);
-      box-shadow:var(--shadow); padding:30px; width:100%;
-      max-width:380px; text-align:center;
-    }
-    .valor { font-size:2rem; color:var(--ok); font-weight:700; margin-top:10px; }
+    .inputs{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:20px}
+    input,button{padding:10px 14px;border-radius:var(--radius);border:1px solid #d1d5db;font-size:15px}
+    button{background:var(--brand);color:white;border:none;cursor:pointer;font-weight:600}
+    button:hover{opacity:.9}
+    .msg{color:var(--error);margin:10px 0;font-weight:600}
+    .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px;justify-items:center}
+    .card{background:var(--card);box-shadow:var(--shadow);border-radius:var(--radius);padding:30px;width:100%;max-width:380px}
+    .valor{font-size:2rem;color:var(--ok);font-weight:700;margin-top:8px}
   </style>
 </head>
 <body>
   <header>
-    <img src="https://cdn-icons-png.flaticon.com/512/4727/4727490.png" />
+    <img src="https://cdn-icons-png.flaticon.com/512/4727/4727490.png"/>
     Recebimentos Mercatto
   </header>
+
   <main>
     <div class="inputs">
-      <div>
-        <label>Data Inicial:</label><br>
-        <input type="date" id="dataInicial" />
-      </div>
-      <div>
-        <label>Hora Inicial:</label><br>
-        <input type="time" id="horaInicial" value="08:00" />
-      </div>
-      <div>
-        <label>Data Final:</label><br>
-        <input type="date" id="dataFinal" />
-      </div>
-      <div>
-        <label>Hora Final:</label><br>
-        <input type="time" id="horaFinal" value="23:59" />
-      </div>
-      <div>
-        <button id="filtrar">Buscar</button>
-      </div>
+      <div><label>Data Inicial:</label><br><input type="date" id="dataInicial"></div>
+      <div><label>Hora Inicial:</label><br><input type="time" id="horaInicial" value="08:00"></div>
+      <div><label>Data Final:</label><br><input type="date" id="dataFinal"></div>
+      <div><label>Hora Final:</label><br><input type="time" id="horaFinal" value="23:59"></div>
+      <div><button id="filtrar">Buscar</button></div>
     </div>
+
     <div id="mensagem" class="msg"></div>
+
     <div class="cards">
       <div class="card">
         <h3>CARNEIRO MERCATTO RESTAURANTE</h3>
@@ -89,21 +61,15 @@
   </main>
 
   <script type="module">
-    import { loginVarejo } from './api/login.js';
-    import { buscarRecebimentos } from './api/recebimentos.js';
+    import { loginVarejo } from './login.js';
+    import { buscarRecebimentos } from './recebimentos.js';
 
     document.getElementById('filtrar').addEventListener('click', async () => {
-      const dataInicial = document.getElementById('dataInicial').value;
-      const horaInicial = document.getElementById('horaInicial').value;
-      const dataFinal = document.getElementById('dataFinal').value;
-      const horaFinal = document.getElementById('horaFinal').value;
+      const di = document.getElementById('dataInicial').value;
+      const hi = document.getElementById('horaInicial').value;
+      const df = document.getElementById('dataFinal').value;
+      const hf = document.getElementById('horaFinal').value;
       const msg = document.getElementById('mensagem');
-      msg.textContent = '';
-
-      if (!dataInicial || !dataFinal) {
-        msg.textContent = 'Informe as datas corretamente.';
-        return;
-      }
 
       msg.textContent = 'Carregando...';
 
@@ -111,22 +77,20 @@
         const token = await loginVarejo();
         if (!token) throw new Error('Falha no login');
 
-        const dados = await buscarRecebimentos(token, dataInicial, horaInicial, dataFinal, horaFinal);
-
+        const dados = await buscarRecebimentos(token, di, hi, df, hf);
         if (!dados || !dados.items) {
-          msg.textContent = 'Nenhum dado encontrado.';
+          msg.textContent = 'Nenhum dado retornado.';
           return;
         }
 
-        // exemplo: soma valores por lojaId
-        const totalRestaurante = dados.items.filter(i => i.lojaId === 1).reduce((acc, i) => acc + i.valor, 0);
-        const totalEmporio = dados.items.filter(i => i.lojaId === 2).reduce((acc, i) => acc + i.valor, 0);
+        const totalRest = dados.items.filter(i => i.lojaId === 1).reduce((a,b)=>a+(b.valor||0),0);
+        const totalEmp = dados.items.filter(i => i.lojaId === 2).reduce((a,b)=>a+(b.valor||0),0);
 
-        document.getElementById('restaurante').textContent = totalRestaurante.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-        document.getElementById('emporio').textContent = totalEmporio.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        document.getElementById('restaurante').textContent = totalRest.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        document.getElementById('emporio').textContent = totalEmp.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
         msg.textContent = '';
-      } catch (err) {
-        msg.textContent = 'Erro: ' + err.message;
+      } catch(e) {
+        msg.textContent = 'Erro: '+e.message;
       }
     });
   </script>
