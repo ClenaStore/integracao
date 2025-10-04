@@ -1,6 +1,10 @@
 export default async function handler(req, res) {
   const { dataInicial, dataFinal } = req.query;
-  const token = req.headers["authorization"]; // vem direto do front
+  const token = req.headers["authorization"]; // token puro
+
+  if (!token) {
+    return res.status(401).json({ error: "Token não informado" });
+  }
 
   try {
     const response = await fetch(
@@ -8,7 +12,7 @@ export default async function handler(req, res) {
       {
         method: "GET",
         headers: {
-          "Authorization": token,   // 🔹 aqui sem Bearer
+          "Authorization": token, // sem Bearer
           "Accept": "application/json"
         }
       }
