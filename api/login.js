@@ -19,7 +19,6 @@ export async function login() {
   });
 
   if (!resp.ok) throw new Error("Falha no login");
-
   const data = await resp.json();
   return data.accessToken;
 }
