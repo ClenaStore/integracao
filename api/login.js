@@ -1,18 +1,25 @@
-export default async function handler(req, res) {
-  try {
-    const resp = await fetch("https://mercatto.varejofacil.com/api/auth", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: process.env.MERCATTO_USER,
-        password: process.env.MERCATTO_PASS
-      })
-    });
+export async function login() {
+  const user = process.env.MERCATTO_USER;
+  const pass = process.env.MERCATTO_PASS;
+  const url = `${process.env.URL_BASE_MERCATTO}/api/auth`;
 
-    if (!resp.ok) return res.status(resp.status).json({ error: "Falha no login" });
-    const data = await resp.json();
-    res.json({ token: data.accessToken });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const xml = `
+  <Usuario>
+    <username>${user}</username>
+    <password>${pass}</password>
+  </Usuario>`;
+
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/xml",
+      "Accept": "application/json",
+    },
+    body: xml,
+  });
+
+  if (!resp.ok) throw new Error("Falha no login");
+
+  const data = await resp.json();
+  return data.accessToken;
 }
