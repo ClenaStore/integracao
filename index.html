@@ -1,152 +1,74 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painel • Vendas PDV Mercatto</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg:#0b1220; --card:#111a2e; --ink:#e5f0ff; --muted:#94a3b8; --line:#1e293b;
-      --teal:#06b6d4; --green:#16a34a; --amber:#f59e0b;
-      --radius:12px; --shadow:0 4px 12px rgba(0,0,0,.2);
-    }
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:'Inter',system-ui;
-      background:var(--bg);color:var(--ink);
-      padding:20px;
-      display:flex;flex-direction:column;align-items:center;
-      min-height:100vh;
-    }
-    header{text-align:center;margin-bottom:20px;}
-    h1{font-weight:800;font-size:1.6rem;color:var(--teal);}
-    .cards{
-      display:grid;gap:16px;width:100%;max-width:1000px;
-      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    }
-    .card{
-      background:var(--card);border-radius:var(--radius);
-      box-shadow:var(--shadow);padding:16px;
-      border:1px solid var(--line);
-      transition:.2s;cursor:pointer;
-    }
-    .card:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.25);}
-    .card h2{font-size:1rem;font-weight:600;margin-bottom:6px;color:var(--muted);}
-    .card p{font-size:1.2rem;font-weight:700;}
-    section{width:100%;max-width:1000px;margin-top:30px;}
-    section h3{
-      color:var(--teal);font-size:1.1rem;margin-bottom:12px;border-bottom:1px solid var(--line);
-      padding-bottom:6px;
-    }
-    .subcards{
-      display:grid;gap:10px;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    }
-    .subcard{
-      background:var(--card);padding:10px;border-radius:var(--radius);
-      border:1px solid var(--line);
-    }
-    .subcard h4{margin:0 0 4px;font-size:.9rem;color:var(--muted);}
-    .subcard p{font-size:1rem;font-weight:600;}
-  </style>
+<meta charset="UTF-8">
+<title>Recebimentos PDV • Mercatto</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body{
+    background:#0b1220;color:#e5f0ff;
+    font-family:Inter,system-ui;
+    display:flex;flex-direction:column;align-items:center;
+    padding:20px;
+  }
+  input,button{
+    margin:5px;padding:8px;border-radius:6px;
+    border:none;font-size:14px;
+  }
+  button{background:#06b6d4;color:white;cursor:pointer;}
+  pre{
+    background:#111a2e;padding:20px;border-radius:8px;
+    max-width:90vw;overflow:auto;
+    color:#00ffaa;
+    font-size:12px;
+  }
+</style>
 </head>
 <body>
-
-<header>
-  <h1>Resumo de Vendas • Mercatto</h1>
-  <p style="color:var(--muted);font-size:.9rem;">Integração direta com API Varejo Fácil</p>
-</header>
-
-<div id="cardsResumo" class="cards"></div>
-<section id="detalhes"></section>
+  <h1>Consulta Recebimentos Mercatto</h1>
+  <div>
+    <input type="date" id="dataInicio">
+    <input type="time" id="horaInicio" value="00:00">
+    <input type="date" id="dataFim">
+    <input type="time" id="horaFim" value="23:59">
+    <button onclick="consultar()">Consultar</button>
+  </div>
+  <pre id="saida">Aguardando consulta...</pre>
 
 <script>
-const BASE_URL = "https://mercatto.varejofacil.com/api";
-const USER = "NALBERT SOUZA";       // 🔹 substitua
-const PASS = "99861";         // 🔹 substitua
-const DATA_INICIO = "2025-10-01T00:00:00";
-const DATA_FIM = "2025-10-01T23:59:59";
+async function consultar(){
+  document.getElementById('saida').innerText = "🔄 Autenticando...";
+  try{
+    // 1️⃣ Login -> obtém accessToken
+    const loginResp = await fetch('/api/login', { method:'POST' });
+    const loginData = await loginResp.json();
+    const token = loginData.accessToken;
+    if(!token) throw new Error("Token não recebido");
 
-async function login() {
-  const resp = await fetch(`${BASE_URL}/auth`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json" },
-    body: JSON.stringify({ username: USER, password: PASS })
-  });
-  const data = await resp.json();
-  if (!data.accessToken) throw new Error("Falha no login");
-  return data.accessToken;
-}
+    // 2️⃣ Pega valores de data/hora
+    const dataInicio = document.getElementById('dataInicio').value;
+    const dataFim = document.getElementById('dataFim').value;
+    const horaInicio = document.getElementById('horaInicio').value;
+    const horaFim = document.getElementById('horaFim').value;
 
-async function buscarVendas(token) {
-  const url = `${BASE_URL}/v1/venda/cupons-fiscais?start=0&q=dataVenda=ge=${DATA_INICIO};dataVenda=le=${DATA_FIM}&count=500`;
-  const resp = await fetch(url, {
-    method: "GET",
-    headers: { "Authorization": token, "Accept": "application/json" }
-  });
-  const json = await resp.json();
-  return json.items || [];
-}
+    document.getElementById('saida').innerText = "🔄 Buscando vendas...";
 
-function renderizar(vendas){
-  let total = 0, cupons = vendas.length;
-  const caixas = {};
+    // 3️⃣ Consulta vendas
+    const resp = await fetch('/api/recebimentos', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ token, dataInicio, dataFim, horaInicio, horaFim })
+    });
+    const data = await resp.json();
 
-  vendas.forEach(v => {
-    const valor = v.valor || 0;
-    const caixa = v.numeroCaixa || "000";
-    total += valor;
+    // 4️⃣ Exibe JSON puro
+    document.getElementById('saida').innerText = JSON.stringify(data, null, 2);
 
-    if (!caixas[caixa]) caixas[caixa] = { total: 0, count: 0, formas: {} };
-    caixas[caixa].total += valor;
-    caixas[caixa].count++;
-
-    const forma = v.finalizacoes?.[0]?.modalidade || "Desconhecida";
-    if (!caixas[caixa].formas[forma]) caixas[caixa].formas[forma] = { total: 0, count: 0 };
-    caixas[caixa].formas[forma].total += valor;
-    caixas[caixa].formas[forma].count++;
-  });
-
-  const media = total / (cupons || 1);
-
-  document.getElementById("cardsResumo").innerHTML = `
-    <div class="card"><h2>Total Vendido</h2><p>R$ ${total.toFixed(2)}</p></div>
-    <div class="card"><h2>Cupons</h2><p>${cupons}</p></div>
-    <div class="card"><h2>Ticket Médio</h2><p>R$ ${media.toFixed(2)}</p></div>
-  `;
-
-  const detalhes = Object.entries(caixas).map(([cx, info])=>{
-    const formas = Object.entries(info.formas).map(([f, d])=>`
-      <div class="subcard">
-        <h4>${f}</h4>
-        <p>R$ ${d.total.toFixed(2)} • ${d.count} vendas</p>
-      </div>
-    `).join('');
-    return `
-      <section>
-        <h3>Caixa ${cx} — Total R$ ${info.total.toFixed(2)} (${info.count} cupons)</h3>
-        <div class="subcards">${formas}</div>
-      </section>
-    `;
-  }).join('');
-  document.getElementById("detalhes").innerHTML = detalhes;
-}
-
-(async ()=>{
-  try {
-    document.body.insertAdjacentHTML('beforeend','<p id="loading" style="margin-top:40px;color:var(--muted)">🔄 Conectando à API...</p>');
-    const token = await login();
-    document.getElementById("loading").innerText = "🔄 Carregando vendas...";
-    const vendas = await buscarVendas(token);
-    document.getElementById("loading").remove();
-    renderizar(vendas);
-  } catch (e) {
+  }catch(e){
     console.error(e);
-    document.body.innerHTML = `<p style="color:red;">Erro: ${e.message}</p>`;
+    document.getElementById('saida').innerText = "Erro: " + e.message;
   }
-})();
+}
 </script>
-
 </body>
 </html>
