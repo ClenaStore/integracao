@@ -1,28 +1,19 @@
-// api/login.js
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
   try {
-    const response = await fetch("https://mercatto.varejofacil.com/api/auth", {
+    const response = await fetch("https://mercatto.varejofacil.com/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: process.env.VAREJO_USERNAME,
-        password: process.env.VAREJO_PASSWORD
+        username: process.env.MERCATTO_USER,
+        password: process.env.MERCATTO_PASS
       })
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      return res.status(response.status).json({ error: "Falha no login", detail: text });
-    }
+    if (!response.ok) throw new Error("Falha no login");
 
     const data = await response.json();
-    res.status(200).json(data);
-
-  } catch (error) {
-    res.status(500).json({ error: "Erro interno no login", detail: error.message });
+    res.status(200).json({ token: data.accessToken });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
