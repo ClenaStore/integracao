@@ -2,7 +2,7 @@ export default async function handler(req, res) {
   try {
     const { dataIni, dataFim } = req.query;
 
-    // 1️⃣ Login automático
+    // 1️⃣ Login
     const loginResp = await fetch("https://mercatto.varejofacil.com/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -16,8 +16,8 @@ export default async function handler(req, res) {
     const token = loginData.accessToken;
     if (!token) throw new Error("Token inválido");
 
-    // 2️⃣ Busca de recebimentos com filtro de data e hora
-    const url = `https://mercatto.varejofacil.com/v1/pdv/recebimentos?q=dataHoraFechamentoRecebimento=ge=${dataIni};dataHoraFechamentoRecebimento=le=${dataFim}&start=0&count=1000`;
+    // 2️⃣ Endpoint correto (cupons-fiscais)
+    const url = `https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais?q=dataVenda=ge=${dataIni};dataVenda=le=${dataFim}&start=0&count=1000`;
 
     const resp = await fetch(url, {
       headers: {
@@ -26,10 +26,10 @@ export default async function handler(req, res) {
       }
     });
 
-    if (!resp.ok) throw new Error("Erro ao consultar recebimentos");
+    if (!resp.ok) throw new Error("Erro ao consultar API");
     const dados = await resp.json();
 
-    // 3️⃣ Processamento
+    // 3️⃣ Processamento (separa restaurante / empório e almoço)
     const finalizadoras = {
       1:"dinheiro",2:"crédito",3:"débito",4:"pix",5:"consumo interno",12:"débito",
       13:"pix",14:"dinheiro",15:"pix",16:"pix",17:"crédito",18:"débito",
@@ -38,11 +38,16 @@ export default async function handler(req, res) {
       30:"online",31:"online",32:"online",33:"voucher",34:"marketing",35:"voucher",36:"outros"
     };
 
-    const resultado = { restaurante: {}, emporio: {} };
+    const resultado = { restaurante: {}, emporio: {}, almoco: 0 };
 
     dados.items.forEach(item => {
       const caixa = parseInt(item.numeroCaixa);
       const destino = (caixa >= 1 && caixa <= 5) ? "emporio" : "restaurante";
+
+      const hora = new Date(item.dataHoraFechamentoCupom).getHours();
+      if (caixa > 5 && hora >= 8 && hora <= 16) {
+        resultado.almoco += item.valor;
+      }
 
       item.finalizacoes.forEach(fin => {
         const cat = finalizadoras[fin.finalizadoraId] || "outros";
