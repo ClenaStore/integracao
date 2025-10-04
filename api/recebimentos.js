@@ -1,53 +1,33 @@
-// /api/parcelas.js
 export default async function handler(req, res) {
-  const INIT_TOKEN = process.env.F360_INIT_TOKEN;
-  const BASE_URL = process.env.F360_BASE_URL || "https://financas.f360.com.br";
-
-  if (!INIT_TOKEN) {
-    return res.status(500).json({ error: "F360_INIT_TOKEN não definido" });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Método não permitido' });
   }
 
+  const { token, dataInicio, dataFim, horaInicio, horaFim } = req.body;
+
+  if (!token) return res.status(400).json({ error: 'Token não informado' });
+
+  const url = `https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais?start=0&q=dataVenda=ge=${dataInicio}T${horaInicio};dataVenda=le=${dataFim}T${horaFim}&count=200`;
+
   try {
-    // 1. Login para obter JWT
-    const loginResp = await fetch(BASE_URL + "/PublicLoginAPI/DoLogin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: INIT_TOKEN }),
-    });
-
-    if (!loginResp.ok) {
-      const text = await loginResp.text();
-      return res.status(loginResp.status).json({ error: text });
-    }
-
-    const loginData = await loginResp.json();
-    const jwt = loginData.Token || loginData.token || loginData.jwt;
-    if (!jwt) {
-      return res.status(500).json({ error: "JWT não retornado pelo login", loginData });
-    }
-
-    // 2. Monta parâmetros da query string
-    const { pagina = 1, tipo = "Despesa", inicio = "", fim = "", tipoDatas = "Emissão", empresa = "" } = req.query;
-    const qs = new URLSearchParams({ pagina, tipo, inicio, fim, tipoDatas });
-    if (empresa) qs.append("empresa", empresa);
-
-    // 3. Chama a API Listar Parcelas
-    const parcelasUrl = BASE_URL + "/ParcelasDeTituloPublicAPI/ListarParcelasDeTitulos?" + qs.toString();
-    const parcelasResp = await fetch(parcelasUrl, {
+    const response = await fetch(url, {
+      method: 'GET',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + jwt,
-      },
+        'Authorization': token,
+        'Accept': 'application/json'
+      }
     });
 
-    if (!parcelasResp.ok) {
-      const text = await parcelasResp.text();
-      return res.status(parcelasResp.status).json({ error: text });
+    if (!response.ok) {
+      const text = await response.text();
+      return res.status(response.status).send(text);
     }
 
-    const parcelasData = await parcelasResp.json();
-    return res.status(200).json(parcelasData);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
+    const data = await response.json();
+    return res.status(200).json(data);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Erro ao buscar recebimentos', details: error.message });
   }
 }
