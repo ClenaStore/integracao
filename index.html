@@ -7,7 +7,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0b1220;--card:#111a2e;--ink:#e5f0ff;--muted:#a8b3c7;--teal:#06b6d4;
+    --bg:#0b1220;--card:#111a2e;--ink:#e5f0ff;--muted:#a8b3c7;
+    --teal:#06b6d4;--green:#16a34a;--amber:#fbbf24;--red:#ef4444;
   }
   body{
     margin:0;
@@ -24,6 +25,20 @@
     padding:8px 10px;margin:4px;border-radius:6px;border:none;font-size:14px;
   }
   button{background:var(--teal);color:white;cursor:pointer;font-weight:600;}
+  #cards{
+    display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:25px;
+  }
+  .card{
+    background:var(--card);
+    padding:16px 24px;
+    border-radius:10px;
+    box-shadow:0 4px 12px rgba(0,0,0,.25);
+    border:1px solid rgba(255,255,255,.05);
+    text-align:center;
+    min-width:220px;
+  }
+  .card h2{margin:0;color:var(--muted);font-size:0.9rem;}
+  .card p{margin:4px 0 0;font-size:1.4rem;font-weight:700;}
   #layout{
     display:flex;
     gap:40px;
@@ -59,6 +74,12 @@
     <input type="date" id="dataFim">
     <input type="time" id="horaFim" value="23:59">
     <button onclick="consultar()">Consultar</button>
+  </div>
+
+  <div id="cards">
+    <div class="card"><h2>Total Geral</h2><p id="totalGeral">R$ 0,00</p></div>
+    <div class="card"><h2>Restaurante Mercatto</h2><p id="totalRestaurante">R$ 0,00</p></div>
+    <div class="card"><h2>Empório Mercatto</h2><p id="totalEmporio">R$ 0,00</p></div>
   </div>
 
   <div id="layout">
@@ -110,6 +131,30 @@ function encontrarGrupo(descricao){
   return "outros";
 }
 
+// 🧮 Soma os totais de restaurante e empório
+function calcularSetores(vendas){
+  let totalGeral = 0;
+  let totalRestaurante = 0;
+  let totalEmporio = 0;
+
+  vendas.forEach(v=>{
+    const caixa = parseInt(v.numeroCaixa || "0");
+    const hora = (v.hora || "").padStart(4,"0");
+    const valor = v.valor || 0;
+    totalGeral += valor;
+
+    // Restaurante: caixas >005, entre 08h e 16h
+    if(caixa > 5 && hora >= "0800" && hora <= "1600") totalRestaurante += valor;
+
+    // Empório: caixas 001 a 005
+    if(caixa >= 1 && caixa <= 5) totalEmporio += valor;
+  });
+
+  document.getElementById("totalGeral").innerText = "R$ " + totalGeral.toFixed(2);
+  document.getElementById("totalRestaurante").innerText = "R$ " + totalRestaurante.toFixed(2);
+  document.getElementById("totalEmporio").innerText = "R$ " + totalEmporio.toFixed(2);
+}
+
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
   const dataFim = document.getElementById('dataFim').value;
@@ -131,10 +176,13 @@ async function consultar(){
     });
     const data = await resp.json();
     saida.textContent = JSON.stringify(data,null,2);
-
     const vendas = data.items || [];
-    const caixas = {};
 
+    // Calcula e atualiza os cards
+    calcularSetores(vendas);
+
+    // --- Resumo por caixa e grupo ---
+    const caixas = {};
     vendas.forEach(v=>{
       const caixa = v.numeroCaixa || "000";
       if(!caixas[caixa]) caixas[caixa] = {};
