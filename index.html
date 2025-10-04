@@ -1,419 +1,148 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Recebimentos • Mercatto</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --bg:#f5f7fb;--card:#ffffff;--ink:#111827;--muted:#6b7280;--brand:#2563eb;
-      --ok:#16a34a;--warn:#d97706;--err:#b91c1c;--chip:#eef2ff;--line:#e5e7eb;
-      --shadow:0 10px 25px rgba(0,0,0,.08);
-    }
-    *{box-sizing:border-box}
-    html,body{margin:0;height:100%}
-    body{background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial}
-    h1{margin:18px 0;text-align:center;font-size:22px}
-    .topbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin:10px 12px}
-    .topbar .field{display:flex;gap:6px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;box-shadow:var(--shadow)}
-    .topbar input[type="date"]{border:none;outline:none;background:transparent;color:var(--ink)}
-    .topbar button{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;box-shadow:var(--shadow);font-weight:600}
-    .topbar button:hover{filter:brightness(.95)}
-    .pill{display:inline-flex;align-items:center;gap:6px;background:var(--chip);padding:6px 10px;border-radius:999px;color:#1e3a8a;font-weight:600;font-size:12px}
-    .meta{display:flex;gap:10px;justify-content:center;margin:6px 12px;color:var(--muted);flex-wrap:wrap}
-    #error{display:none;margin:12px auto;max-width:980px;background:#fee2e2;border:1px solid #fecaca;color:var(--err);padding:12px 14px;border-radius:10px}
-    .grid{max-width:1200px;margin:12px auto 40px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));padding:0 12px}
-    .section{grid-column:1/-1;margin-top:10px}
-    .section .title{background:#e5e7eb;border-radius:10px;padding:10px 12px;font-weight:800;box-shadow:var(--shadow)}
-    .sub{grid-column:1/-1;margin-top:6px}
-    .sub .subtitle{background:#f9fafb;border-left:6px solid var(--brand);border-radius:10px;padding:8px 12px;font-weight:700}
-    .totais{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px;transition:transform .12s ease}
-    .card:hover{transform:translateY(-2px)}
-    .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-    .head .name{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px}
-    .head .valor{font-weight:900;font-size:18px;color:var(--brand)}
-    .muted{color:var(--muted)}
-    details{margin-top:8px;background:#fafafa;border:1px dashed var(--line);border-radius:10px;padding:8px}
-    summary{cursor:pointer;font-weight:700}
-    table{width:100%;border-collapse:collapse;margin-top:8px}
-    th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
-    th{font-size:12px;color:var(--muted)}
-    /* Overlay */
-    #overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:9999;flex-direction:column;color:#fff}
-    .spinner{width:46px;height:46px;border-radius:50%;border:4px solid #cbd5e1;border-top:4px solid #fff;animation:spin 1s linear infinite;margin-bottom:10px}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .badge-ok{color:#065f46;background:#d1fae5}
-    .badge-warn{color:#78350f;background:#fef3c7}
-    .badge-err{color:#7f1d1d;background:#fee2e2}
-    .row-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-    .chip{border:1px solid var(--line);background:#f8fafc;border-radius:999px;padding:4px 8px;font-size:12px;color:#0f172a}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>📊 Recebimentos • Mercatto</h1>
+  <header>
+    <h1>Recebimentos</h1>
+    <div class="filtros">
+      <label>Data Inicial: <input type="date" id="dataInicial"></label>
+      <label>Data Final: <input type="date" id="dataFinal"></label>
+      <button id="btnFiltrar">Filtrar</button>
+    </div>
+  </header>
 
-  <div class="topbar">
-    <div class="field">De: <input type="date" id="dataInicio"></div>
-    <div class="field">Até: <input type="date" id="dataFim"></div>
-    <button id="btnBuscar">🔍 Buscar</button>
-    <span id="status" class="pill"><span>⌛</span><b>Aguardando</b></span>
-  </div>
-
-  <div class="meta">
-    <span id="periodo" class="muted"></span>
-    <span id="contagem" class="muted"></span>
-    <span id="updated" class="muted"></span>
-  </div>
-
-  <div id="error"></div>
-
-  <div id="cards" class="grid"></div>
-
-  <div id="overlay">
+  <!-- Overlay de carregamento -->
+  <div id="overlay" class="overlay hidden">
     <div class="spinner"></div>
-    <div id="overlayMsg">Processando…</div>
+    <p>Processando dados...</p>
   </div>
+
+  <!-- Mensagem de erro -->
+  <div id="erro" class="erro hidden"></div>
+
+  <main id="resultado" class="grid"></main>
 
   <script>
-    // ========= CONFIG =========
-    const API_BASE = '/api'; // seu proxy no Vercel. Ex: /api/recebimentos?inicio=...&fim=...
-    const COUNT_MAX = 1000;   // quantos registros pedir por vez
-
-    // ========= UTILS =========
-    const brl = v => new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
-    const todayStr = () => new Date().toISOString().slice(0,10);
-    const norm = s => (s||'').toString().toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .replace(/[^\w\s]/g,' ').replace(/\s+/g,' ').trim();
-
-    const betweenLunch = (horaHHmm) => {
-      // Almoço 03:00–16:00 (inclusive)
-      const h = parseInt((horaHHmm||'0000').slice(0,2),10);
-      const m = parseInt((horaHHmm||'0000').slice(2,4),10);
-      const val = h*100+m;
-      return val >= 300 && val <= 1600;
+    const agrupamentos = {
+      "💳 CRÉDITO": ["credito", "cartao credito", "totem credito", "credito pos", "pgto online credito", "credito delivery", "cart credito", "crédito à vista"],
+      "🏧 DÉBITO": ["debito", "pgto online debito", "cartao debito", "totem debito", "debito pos", "debito delivery", "cart debito"],
+      "⚡ PIX": ["pix", "pgto online pix", "qrcode", "pix tef", "pix cnpj", "pix offline", "pix itau", "pix pos"],
+      "🌐 ONLINE": ["pagamento online", "pagamentos online", "refeicao", "cart alimentacao"],
+      "🍽 CONSUMO INTERNO": ["funcionario", "convenio empresa", "consumo funcionarios", "consumo musicos"],
+      "📄 BOLETO": ["boleto"],
+      "📝 CREDIÁRIO": ["crediario", "crediario clientes"],
+      "🎟 VOUCHER": ["voucher", "cartao voucher", "voucher pos", "voucher delicia", "voucher villa"],
+      "💵 DINHEIRO": ["dinheiro", "pgto online dinheiro"],
+      "🎁 BONIFICAÇÃO": ["bonificacao"],
+      "📦 CATÁLOGO DELIVERY": ["catalogo delivery", "catálogo delivery"],
+      "👥 CONSUMO SÓCIO": ["socio", "consumo sócio", "consumo socio"],
+      "📢 MARKETING": ["marketing"],
+      "🏦 TRANSF. BANCÁRIA": ["transferencia bancar", "transferencia bancaria"],
+      "🙍 ERROS GARÇOM": ["erros garcons"],
+      "🚫 SEM FATURAMENTO": ["sem faturamento"],
+      "✳ OUTROS": []
     };
 
-    // ========= MAPEAMENTOS =========
-    // IDs -> Descrição (conforme você enviou)
-    const FINALIZADORAS_LIST = [
-      {"id":"2","descricao":"CARTAO CREDITO TEF"},
-      {"id":"3","descricao":"CARTAO DEBITO TEF"},
-      {"id":"5","descricao":"CONSUMO FUNCIONARIOS"},
-      {"id":"12","descricao":"PGTO ONLINE DEBITO"},
-      {"id":"9","descricao":"BONIFICACAO"},
-      {"id":"34","descricao":"MARKETING"},
-      {"id":"28","descricao":"BOLETO DELICIA INDUS"},
-      {"id":"29","descricao":"VOUCHER"},
-      {"id":"10","descricao":"BOLETO"},
-      {"id":"30","descricao":"PGT ONLINE DELIVERY"},
-      {"id":"14","descricao":"PGTO ONLINE DINHEIRO"},
-      {"id":"13","descricao":"PGTO ONLINE PIX"},
-      {"id":"11","descricao":"PGTO ONLINE CREDITO"},
-      {"id":"4","descricao":"PIX CNPJ"},
-      {"id":"32","descricao":"PAGAMENTO ONLINE"},
-      {"id":"33","descricao":"VOUCHER POS"},
-      {"id":"1","descricao":"DINHEIRO"},
-      {"id":"35","descricao":"VALE MERCATTO"},
-      {"id":"36","descricao":"PREJUIZO"},
-      {"id":"16","descricao":"PIX TEF"},
-      {"id":"31","descricao":"PGT ONLINE IFOOD"},
-      {"id":"20","descricao":"BOLETO FAMILY PRODUT"},
-      {"id":"17","descricao":"CREDITO POS"},
-      {"id":"18","descricao":"DEBITO POS"},
-      {"id":"6","descricao":"REFEICAO ALIME. TEF"},
-      {"id":"19","descricao":"CART ALIMENTACAO POS"},
-      {"id":"7","descricao":"TOTEM CREDITO"},
-      {"id":"15","descricao":"PIX QRCODE POS"},
-      {"id":"8","descricao":"TOTEM DEBITO"},
-      {"id":"22","descricao":"BOLETO DELICIA PRODU"},
-      {"id":"24","descricao":"BOLETO ALL TIME CHOP"},
-      {"id":"21","descricao":"BOLETO FOODS TIME"},
-      {"id":"23","descricao":"BOLETO MEOS GOURMET"},
-      {"id":"25","descricao":"BOLETO MERCATTO KIDS"},
-      {"id":"26","descricao":"CREDIARIO CLIENTES"},
-      {"id":"27","descricao":"CONSUMO SOCIO"}
-    ];
-    const FINALIZADORAS_BY_ID = Object.fromEntries(FINALIZADORAS_LIST.map(f=>[String(f.id), f.descricao]));
-
-    // Agrupamentos e sinônimos (como você definiu)
-    const GRUPOS = {
-      "crédito": ["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","credito a vista","crédito à vista"],
-      "débito": ["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
-      "pix": ["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
-      "online": ["pagamento online","pagamentos online","refeicao","cart alimentacao","alime"],
-      "consumo interno": ["funcionario","convenio empresa","consumo funcionarios","consumo musicos","prejuizo"],
-      "boleto": ["boleto"],
-      "crediário": ["crediario","crediario clientes"],
-      "voucher": ["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa","vale mercatto"],
-      "dinheiro": ["dinheiro","pgto online dinheiro"],
-      "bonificação": ["bonificacao"],
-      "catálogo delivery": ["catalogo delivery","catalogo","catálogo delivery"],
-      "consumo sócio": ["socio","consumo socio","consumo sócio"],
-      "marketing": ["marketing"],
-      "transferência bancária": ["transferencia bancar","transferencia bancaria"],
-      "erros garçom": ["erros garcons","erro garcom"],
-      "sem faturamento": ["sem faturamento"],
-      "outros": []
+    const lojas = {
+      restaurante: "CARNEIRO MERCATTO RESTAURANTE",
+      emporio: "CARNEIRO MERCATTO EMPÓRIO"
     };
 
-    const EMOJI = {
-      "crédito":"💳","débito":"💳","pix":"⚡","online":"🌐","consumo interno":"🏢","boleto":"📄",
-      "crediário":"🧾","voucher":"🎟️","dinheiro":"💵","bonificação":"🎁","catálogo delivery":"🛵",
-      "consumo sócio":"🧑‍🤝‍🧑","marketing":"📣","transferência bancária":"🏦","erros garçom":"⚠️",
-      "sem faturamento":"🚫","outros":"💠"
-    };
+    document.getElementById("btnFiltrar").addEventListener("click", carregar);
 
-    // Determina grupo a partir da descrição
-    function grupoDaDescricao(descricao){
-      const d = norm(descricao);
-      for(const [grupo, termos] of Object.entries(GRUPOS)){
-        for(const t of termos){
-          if(d.includes(norm(t))) return grupo;
-        }
+    async function carregar() {
+      const dataInicial = document.getElementById("dataInicial").value;
+      const dataFinal = document.getElementById("dataFinal").value;
+      const overlay = document.getElementById("overlay");
+      const erro = document.getElementById("erro");
+      const resultado = document.getElementById("resultado");
+
+      erro.classList.add("hidden");
+      overlay.classList.remove("hidden");
+      resultado.innerHTML = "";
+
+      try {
+        const res = await fetch(`/api/recebimentos?dataInicial=${dataInicial}&dataFinal=${dataFinal}`);
+        if (!res.ok) throw new Error("Erro na API");
+        const dados = await res.json();
+
+        const agrupados = processarDados(dados.items || []);
+        renderizar(agrupados);
+      } catch (e) {
+        erro.textContent = "❌ Falha ao carregar dados: " + e.message;
+        erro.classList.remove("hidden");
+      } finally {
+        overlay.classList.add("hidden");
       }
-      return "outros";
-    }
-    function grupoDaFinalizadoraId(id){
-      const desc = FINALIZADORAS_BY_ID[String(id)] || `Finalizadora ${id}`;
-      return grupoDaDescricao(desc);
     }
 
-    // Loja pelo caixa
-    function lojaPeloCaixa(numStr){
-      const n = parseInt(numStr,10);
-      return (n>=1 && n<=4) ? "🏪 Empório Mercatto" : "🍽️ Restaurante Mercatto";
-    }
+    function processarDados(items) {
+      const lojasDados = { restaurante: {}, emporio: {}, almoco: {} };
 
-    // ========= RENDER =========
-    const overlay = document.getElementById('overlay');
-    const overlayMsg = document.getElementById('overlayMsg');
-    const errorBox = document.getElementById('error');
-    const cards = document.getElementById('cards');
-    const periodo = document.getElementById('periodo');
-    const contagem = document.getElementById('contagem');
-    const updated = document.getElementById('updated');
-    const statusPill = document.getElementById('status');
+      for (let item of items) {
+        const caixa = item.numeroCaixa;
+        const nomeFinalizadora = (item.finalizadora || "").toLowerCase();
+        const valor = parseFloat(item.valorLiquido || 0);
+        const hora = new Date(item.data).getHours();
 
-    function setStatus(kind, text){
-      // kind: ok | warn | err | idle | loading
-      const map = {
-        ok:['badge-ok','✅'],
-        warn:['badge-warn','⚠️'],
-        err:['badge-err','⛔'],
-        idle:['','⌛'],
-        loading:['','⏳']
-      };
-      const [klass, icon] = map[kind] || map.idle;
-      statusPill.className='pill '+klass;
-      statusPill.innerHTML = `<span>${icon}</span><b>${text}</b>`;
-    }
+        let loja = null;
+        if (caixa === "001" || caixa === "002" || caixa === "005") loja = "restaurante";
+        if (caixa === "003" || caixa === "004") loja = "emporio";
 
-    function showOverlay(msg='Processando…'){ overlayMsg.textContent=msg; overlay.style.display='flex'; }
-    function hideOverlay(){ overlay.style.display='none'; }
+        if (!loja) continue;
 
-    function showError(message){
-      errorBox.textContent = message;
-      errorBox.style.display = 'block';
-      setStatus('err','Erro');
-    }
-    function hideError(){ errorBox.style.display='none'; }
-
-    function clearCards(){ cards.innerHTML=''; }
-
-    function addSection(title){
-      const s = document.createElement('div');
-      s.className='section';
-      s.innerHTML = `<div class="title">${title}</div>`;
-      cards.appendChild(s);
-    }
-    function addSub(title, chips=[]){
-      const s = document.createElement('div');
-      s.className='sub';
-      const chipsHtml = chips.map(c=>`<span class="chip">${c}</span>`).join('');
-      s.innerHTML = `<div class="subtitle">${title}</div>${chipsHtml?`<div class="row-chips">${chipsHtml}</div>`:''}`;
-      cards.appendChild(s);
-    }
-    function addCard(grupo, total, porFinalizadora, porCaixa){
-      const card = document.createElement('div');
-      card.className='card';
-      const emoji = EMOJI[grupo] || '💠';
-      card.innerHTML = `
-        <div class="head">
-          <div class="name">${emoji} ${grupo}</div>
-          <div class="valor">${brl(total)}</div>
-        </div>
-      `;
-      // Detalhes por finalizadora
-      const detF = document.createElement('details');
-      detF.innerHTML = `<summary>Por finalizadora</summary>`;
-      const tblF = document.createElement('table');
-      tblF.innerHTML = `<thead><tr><th>ID</th><th>Finalizadora</th><th>Total</th></tr></thead>`;
-      const tbF = document.createElement('tbody');
-      Object.entries(porFinalizadora)
-        .sort((a,b)=>b[1].total-a[1].total)
-        .forEach(([id,obj])=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${id}</td><td>${obj.descricao}</td><td>${brl(obj.total)}</td>`;
-          tbF.appendChild(tr);
-        });
-      tblF.appendChild(tbF); detF.appendChild(tblF);
-      card.appendChild(detF);
-
-      // Detalhes por caixa
-      const detC = document.createElement('details');
-      detC.innerHTML = `<summary>Por caixa</summary>`;
-      const tblC = document.createElement('table');
-      tblC.innerHTML = `<thead><tr><th>Caixa</th><th>Total</th></tr></thead>`;
-      const tbC = document.createElement('tbody');
-      Object.entries(porCaixa)
-        .sort((a,b)=>parseInt(a[0],10)-parseInt(b[0],10))
-        .forEach(([cx,total])=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td>${cx}</td><td>${brl(total)}</td>`;
-          tbC.appendChild(tr);
-        });
-      tblC.appendChild(tbC); detC.appendChild(tblC);
-      card.appendChild(detC);
-
-      cards.appendChild(card);
-    }
-
-    // ========= PIPE =========
-    function agrega(items){
-      // Estrutura:
-      // agg[loja][turno][grupo] = { total, porFinalizadora:{id:{descricao,total}}, porCaixa:{cx:total} }
-      const agg = {};
-      let totalGeral = 0;
-
-      for(const it of items){
-        const loja = lojaPeloCaixa(it.numeroCaixa);
-        const turno = betweenLunch(it.hora) ? '🥗 Almoço (03:00–16:00)' : '🌙 Outras';
-        agg[loja] ??= {};
-        agg[loja][turno] ??= {};
-
-        for(const fin of (it.finalizacoes||[])){
-          if(!fin || !Number(fin.valor)) continue;
-
-          const fid = String(fin.finalizadoraId);
-          const desc = FINALIZADORAS_BY_ID[fid] || `Finalizadora ${fid}`;
-          const grupo = grupoDaFinalizadoraId(fid);
-
-          const node = (agg[loja][turno][grupo] ??= { total:0, porFinalizadora:{}, porCaixa:{} });
-          node.total += Number(fin.valor);
-          totalGeral += Number(fin.valor);
-
-          // porFinalizadora
-          node.porFinalizadora[fid] ??= { descricao: desc, total:0 };
-          node.porFinalizadora[fid].total += Number(fin.valor);
-
-          // porCaixa
-          const cx = it.numeroCaixa || '—';
-          node.porCaixa[cx] = (node.porCaixa[cx]||0) + Number(fin.valor);
+        // verifica se é almoço
+        if (hora >= 3 && hora <= 16) {
+          lojasDados.almoco["ALMOÇO"] = (lojasDados.almoco["ALMOÇO"] || 0) + valor;
         }
-      }
-      return { agg, totalGeral };
-    }
 
-    function render({items, inicio, fim}){
-      clearCards();
-      hideError();
-
-      const { agg, totalGeral } = agrega(items);
-
-      periodo.textContent = `Período: ${inicio} a ${fim}`;
-      contagem.textContent = `Registros: ${items.length}`;
-      updated.textContent = `Atualizado: ${new Date().toLocaleString('pt-BR')}`;
-
-      for(const [loja, turnos] of Object.entries(agg)){
-        // Soma por turno para chips
-        const chipsTurno = Object.entries(turnos).map(([turno, grupos])=>{
-          const tot = Object.values(grupos).reduce((s,g)=>s+g.total,0);
-          return `${turno}: ${brl(tot)}`;
-        });
-        addSection(`${loja} — Total: ${brl(Object.values(turnos).reduce((s,grps)=>s+Object.values(grps).reduce((a,g)=>a+g.total,0),0))}`);
-        addSub('Turnos', chipsTurno);
-
-        for(const [turno, grupos] of Object.entries(turnos)){
-          // Só renderiza se existir ao menos um grupo com valor > 0
-          const gruposValidos = Object.entries(grupos).filter(([,g])=>g.total>0);
-          if(gruposValidos.length===0) continue;
-
-          addSub(turno);
-
-          gruposValidos
-            .sort((a,b)=>b[1].total - a[1].total)
-            .forEach(([grupo, info])=>{
-              addCard(grupo, info.total, info.porFinalizadora, info.porCaixa);
-            });
+        // acha o agrupamento
+        for (let [categoria, aliases] of Object.entries(agrupamentos)) {
+          if (aliases.some(alias => nomeFinalizadora.includes(alias))) {
+            lojasDados[loja][categoria] = (lojasDados[loja][categoria] || 0) + valor;
+          }
         }
       }
 
-      // Rodapé geral
-      if(items.length){
-        const foot = document.createElement('div');
-        foot.className='section';
-        foot.innerHTML = `
-          <div class="title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span>🧮 Total geral:</span>
-            <span class="pill badge-ok">${brl(totalGeral)}</span>
-          </div>`;
-        cards.appendChild(foot);
-      }
+      return lojasDados;
     }
 
-    // ========= FETCH =========
-    async function carregarRecebimentos(){
-      const inicio = document.getElementById('dataInicio').value;
-      const fim = document.getElementById('dataFim').value;
+    function renderizar(dados) {
+      const resultado = document.getElementById("resultado");
+      resultado.innerHTML = "";
 
-      if(!inicio || !fim){
-        showError('Informe as duas datas (início e fim).');
-        return;
-      }
+      for (let loja of ["restaurante", "emporio"]) {
+        const valores = dados[loja];
+        if (!valores) continue;
 
-      setStatus('loading','Buscando…');
-      showOverlay('Buscando recebimentos…');
+        let total = Object.values(valores).reduce((a, b) => a + b, 0);
 
-      try{
-        hideError();
-
-        // Monta URL do seu proxy/edge
-        const url = `${API_BASE}/recebimentos?inicio=${encodeURIComponent(inicio)}&fim=${encodeURIComponent(fim)}&count=${COUNT_MAX}`;
-        const res = await fetch(url, { method:'GET' });
-
-        if(!res.ok){
-          const txt = await res.text().catch(()=> '');
-          throw new Error(`Falha ${res.status} ao consultar /recebimentos. ${txt?.slice(0,200)}`);
+        let card = `<section class="card">
+          <h2>${lojas[loja]} — R$ ${total.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</h2>
+          <ul>`;
+        for (let [categoria, valor] of Object.entries(valores)) {
+          if (valor > 0) {
+            card += `<li>${categoria}: <b>R$ ${valor.toLocaleString("pt-BR",{minimumFractionDigits:2})}</b></li>`;
+          }
         }
+        card += `</ul></section>`;
+        resultado.innerHTML += card;
+      }
 
-        const data = await res.json();
-        if(!data || !Array.isArray(data.items)) throw new Error('Resposta inesperada da API.');
-
-        render({ items: data.items, inicio, fim });
-        setStatus('ok','Sucesso');
-      } catch(err){
-        console.error(err);
-        showError(err.message || 'Erro desconhecido.');
-      } finally{
-        hideOverlay();
+      if (dados.almoco["ALMOÇO"]) {
+        resultado.innerHTML += `
+          <section class="card destaque">
+            <h2>🍽 Vendas de Almoço</h2>
+            <p>Total: <b>R$ ${dados.almoco["ALMOÇO"].toLocaleString("pt-BR",{minimumFractionDigits:2})}</b></p>
+          </section>
+        `;
       }
     }
-
-    // ========= INIT =========
-    (function init(){
-      // Datas padrão: hoje
-      const d = todayStr();
-      document.getElementById('dataInicio').value = d;
-      document.getElementById('dataFim').value = d;
-
-      document.getElementById('btnBuscar').addEventListener('click', carregarRecebimentos);
-
-      setStatus('idle','Aguardando');
-      // auto-carregar na abertura
-      carregarRecebimentos();
-    })();
   </script>
 </body>
 </html>
