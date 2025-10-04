@@ -1,847 +1,152 @@
-<!doctype html>
-<html lang="pt-BR" data-theme="light">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Painel • Planos de Contas & Títulos (F360)</title>
-
-  <!-- Charts -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel • Vendas PDV Mercatto</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#f9fafb; --card:#fff; --ink:#0f1724; --muted:#6b7280;
-      --accent:#2563eb; --danger:#dc2626; --warn:#f59e0b; --ok:#16a34a;
-      --line:#e5e7eb; --radius:12px; --shadow:0 6px 24px rgba(15,23,42,.08);
+    :root {
+      --bg:#0b1220; --card:#111a2e; --ink:#e5f0ff; --muted:#94a3b8; --line:#1e293b;
+      --teal:#06b6d4; --green:#16a34a; --amber:#f59e0b;
+      --radius:12px; --shadow:0 4px 12px rgba(0,0,0,.2);
     }
     *{box-sizing:border-box;margin:0;padding:0}
-    html,body{height:100%}
-    body{font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
-
-    header{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--shadow);z-index:10}
-    header img{height:32px}
-    h1{margin:0;font-size:16px;font-weight:700}
-    .meta{margin-left:auto;font-size:13px;color:var(--muted)}
-    .perfil{display:flex;align-items:center;gap:8px;margin-left:16px}
-    .perfil img{width:42px;height:42px;border-radius:50%}
-
-    .wrap{display:flex;flex-direction:column;flex:1;overflow:hidden}
-    .row{display:flex;gap:12px;padding:12px}
-    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 16px;display:flex;flex-direction:column}
-
-    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-    .controls input,.controls select,.controls button{padding:8px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:14px;background:#fff}
-    .btn{background:var(--accent);color:#fff;border:none;cursor:pointer}
-    .btn.secondary{background:#eef2ff;color:#1e3a8a;border:1px solid #c7d2fe}
-    .btn.danger{background:var(--danger)}
-    .tag{padding:6px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:#334155;background:#f8fafc}
-
-    /* Multi-select de meios */
-    .multi{position:relative}
-    .multi>input{min-width:220px;cursor:pointer;background:#fff}
-    .multi-menu{position:absolute;top:110%;left:0;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:var(--shadow);padding:8px;display:none;z-index:50;max-height:260px;overflow:auto;min-width:240px}
-    .multi.open .multi-menu{display:block}
-    .multi-menu label{display:flex;gap:8px;align-items:center;font-size:13px;padding:4px 6px;border-radius:6px}
-    .multi-menu label:hover{background:#f3f4f6}
-
-    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .kpi{border:1px solid var(--line);border-radius:12px;padding:12px}
-    .kpi .title{font-size:12px;color:var(--muted);text-transform:uppercase}
-    .kpi .value{font-size:20px;font-weight:800;margin-top:6px}
-    .kpi .delta{font-size:12px;margin-top:6px}
-    .delta.up{color:var(--ok)} .delta.down{color:var(--danger)} .muted{color:var(--muted)}
-
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
-
-    #tableWrap{flex:1;overflow:auto}
-    table{width:100%;border-collapse:separate;border-spacing:0 4px}
-    th{background:#f3f4f6;position:sticky;top:0;padding:10px;font-size:12px;text-align:left;text-transform:uppercase;color:var(--muted);z-index:5}
-    td{padding:10px;background:#fff;border:1px solid #f1f5f9;border-left:none;border-right:none;font-size:13px;white-space:nowrap}
-    tr:hover td{background:#f8fafc}
-    .table-compact th,.table-compact td{padding:8px;border:1px solid #eef2f7;white-space:normal}
-    .table-compact th{position:static}
-
-    footer{padding:10px 16px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;background:#fff;border-top:1px solid var(--line)}
-
-    /* Loader */
-    #loader{position:fixed;inset:0;background:rgba(37,99,235,.6);display:none;align-items:center;justify-content:center;z-index:99;flex-direction:column;color:#fff;font-size:18px;font-weight:600;backdrop-filter:blur(3px)}
-    .spinner{border:4px solid rgba(255,255,255,.35);border-top:4px solid #fff;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin-bottom:12px}
-    @keyframes spin{to{transform:rotate(360deg)}}
-
-    /* Login (opcional) */
-    #login{position:fixed;inset:0;background:#fff;display:none;align-items:center;justify-content:center;flex-direction:column;z-index:200}
-    #login img{width:180px;margin-bottom:20px}
-    #login input{padding:10px 14px;font-size:16px;width:240px;text-align:center}
-    #login button{margin-top:12px;width:240px;padding:10px;font-size:15px}
-    #login small{margin-top:8px;color:var(--muted)}
-
-    /* Seções extras (comparativos, sem movimentação, modal) */
-    .section-title{font-weight:700;margin-bottom:8px}
-    .hint{font-size:12px;color:var(--muted);margin-top:4px}
-    .status-ok{color:#16a34a;font-weight:600}
-    .status-warn{color:#f59e0b;font-weight:600}
-    .status-bad{color:#dc2626;font-weight:600}
-
-    #modalHistorico{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:300}
-    #modalHistorico .box{background:#fff;border-radius:12px;box-shadow:var(--shadow);padding:16px;width:min(900px,92vw)}
-    #modalHistorico .box header{display:flex;align-items:center;justify-content:space-between;padding:0 0 8px 0;border-bottom:1px solid var(--line);box-shadow:none}
-    #modalHistorico .box header h3{margin:0;font-size:16px}
-    #modalHistorico .box header button{border:none;background:#e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer}
+    body{
+      font-family:'Inter',system-ui;
+      background:var(--bg);color:var(--ink);
+      padding:20px;
+      display:flex;flex-direction:column;align-items:center;
+      min-height:100vh;
+    }
+    header{text-align:center;margin-bottom:20px;}
+    h1{font-weight:800;font-size:1.6rem;color:var(--teal);}
+    .cards{
+      display:grid;gap:16px;width:100%;max-width:1000px;
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    }
+    .card{
+      background:var(--card);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:16px;
+      border:1px solid var(--line);
+      transition:.2s;cursor:pointer;
+    }
+    .card:hover{transform:translateY(-3px);box-shadow:0 6px 18px rgba(0,0,0,.25);}
+    .card h2{font-size:1rem;font-weight:600;margin-bottom:6px;color:var(--muted);}
+    .card p{font-size:1.2rem;font-weight:700;}
+    section{width:100%;max-width:1000px;margin-top:30px;}
+    section h3{
+      color:var(--teal);font-size:1.1rem;margin-bottom:12px;border-bottom:1px solid var(--line);
+      padding-bottom:6px;
+    }
+    .subcards{
+      display:grid;gap:10px;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    }
+    .subcard{
+      background:var(--card);padding:10px;border-radius:var(--radius);
+      border:1px solid var(--line);
+    }
+    .subcard h4{margin:0 0 4px;font-size:.9rem;color:var(--muted);}
+    .subcard p{font-size:1rem;font-weight:600;}
   </style>
 </head>
 <body>
-  <!-- Login opcional (deixe SENHA_CORRETA vazio para desativar) -->
-  <div id="login">
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
-    <input type="password" id="senhaInput" placeholder="Digite a senha" />
-    <button class="btn" id="btnLogin">Entrar</button>
-    <small>Esta sessão fica salva no navegador. É proibido compartilhar com terceiros.</small>
-    <div id="loginMsg" style="color:#dc2626;margin-top:10px;font-size:13px"></div>
-  </div>
 
-  <header>
-    <img src="https://static.wixstatic.com/media/d830b0_8cec50a98bbf4775814dbfa5386585e8~mv2.png" alt="Logo">
-    <div>
-      <h1>Painel • Planos de Contas & Títulos (F360)</h1>
-      <div class="muted" style="font-size:12px">Integração F360 ativa • Análise + Consulta</div>
-    </div>
-    <div class="meta">Status: <span id="status">inicializando...</span></div>
-    <div class="perfil"><img src="https://i.pravatar.cc/120" alt=""><span>Usuário</span></div>
-  </header>
+<header>
+  <h1>Resumo de Vendas • Mercatto</h1>
+  <p style="color:var(--muted);font-size:.9rem;">Integração direta com API Varejo Fácil</p>
+</header>
 
-  <div id="loader"><div class="spinner"></div>Carregando...</div>
-
-  <div class="wrap">
-    <!-- Filtros -->
-    <div class="row">
-      <div class="card" style="flex:1">
-        <div class="controls">
-          <span class="tag">Tipo:</span>
-          <label class="tag"><input type="radio" name="tipo" value="Despesa" checked> Despesa</label>
-          <label class="tag"><input type="radio" name="tipo" value="Receita"> Receita</label>
-
-          <select id="empresaSelect" title="Empresa"><option value="">-- Todas as empresas --</option></select>
-          <input type="date" id="inicio" />
-          <input type="date" id="fim" />
-          <select id="tipoDatas" title="Referência de data"><option>Emissão</option><option selected>Vencimento</option></select>
-
-          <select id="statusSelect" title="Status"><option value="">-- Todos os status --</option></select>
-          <select id="planoSelect" title="Plano de Contas"><option value="">-- Todos os planos --</option></select>
-
-          <div class="multi" id="meioMulti">
-            <input type="text" readonly placeholder="Formas de pagamento" id="meioInput" />
-            <div class="multi-menu" id="meioMenu"></div>
-          </div>
-
-          <input type="text" id="searchBox" placeholder="🔍 Buscar fornecedor/observação..." />
-
-          <button class="btn" id="btnLoad">Analisar</button>
-          <button class="btn secondary" id="btnRefresh">Atualizar</button>
-          <button class="btn danger" id="btnClearCache" title="Limpa somente o cache do período/param atual">Limpar Cache</button>
-        </div>
-
-        <!-- KPIs -->
-        <div class="kpis">
-          <div class="kpi"><div class="title">Total do Período</div><div class="value" id="kpiTotal">R$ 0,00</div><div class="delta" id="kpiTotalDelta">—</div></div>
-          <div class="kpi"><div class="title">Qtde de Títulos</div><div class="value" id="kpiQtd">0</div><div class="delta" id="kpiQtdDelta">—</div></div>
-          <div class="kpi"><div class="title">Ticket Médio</div><div class="value" id="kpiTicket">R$ 0,00</div><div class="delta" id="kpiTicketDelta">—</div></div>
-          <div class="kpi"><div class="title">Top Plano</div><div class="value" id="kpiTopPlano">—</div><div class="delta" id="kpiTopPlanoPart">—</div></div>
-
-          <div class="kpi"><div class="title">% Pago x Aberto</div><div class="value" id="kpiPago">—</div><div class="delta muted" id="kpiAbertoValor">—</div></div>
-          <div class="kpi"><div class="title">Maior Título</div><div class="value" id="kpiMaior">—</div><div class="delta muted" id="kpiMaiorForn">—</div></div>
-          <div class="kpi"><div class="title">Dias médios até Venc.</div><div class="value" id="kpiDias">—</div><div class="delta muted" id="kpiDiasObs">—</div></div>
-          <div class="kpi"><div class="title">Atrasados (valor)</div><div class="value" id="kpiAtrasoValor">—</div><div class="delta muted" id="kpiAtrasoQtd">—</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gráficos -->
-    <div class="row">
-      <div class="card" style="flex:1">
-        <div class="muted" style="margin-bottom:8px;font-size:13px">Valor por Plano de Contas (Top 10) — clique para filtrar</div>
-        <canvas id="chartPlanos"></canvas>
-        <div class="hint">Dica: clique no nome do plano na tabela de comparativos para ver o histórico.</div>
-      </div>
-    </div>
-    <div class="row grid-2">
-      <div class="card">
-        <div class="muted" style="margin-bottom:8px;font-size:13px">Evolução diária no período</div>
-        <canvas id="chartEvolucao"></canvas>
-      </div>
-      <div class="card">
-        <div class="muted" style="margin-bottom:8px;font-size:13px">Distribuição por Status</div>
-        <canvas id="chartStatus"></canvas>
-      </div>
-    </div>
-    <div class="row">
-      <div class="card" style="flex:1">
-        <div class="muted" style="margin-bottom:8px;font-size:13px">Centro de Custo (Top 5, valor)</div>
-        <canvas id="chartCCusto"></canvas>
-      </div>
-    </div>
-
-    <!-- Comparativos por Plano (Atual x Anterior) -->
-    <div class="row">
-      <div class="card" style="flex:1">
-        <div class="section-title">Comparativo por Plano (período atual × anterior)</div>
-        <canvas id="chartCompPlanos"></canvas>
-        <div class="hint">Clique em um plano na tabela abaixo para abrir o histórico detalhado.</div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="card" style="flex:1">
-        <div class="section-title">Tabela comparativa</div>
-        <div id="tableCompWrap" style="overflow:auto">
-          <table class="table-compact" id="tableComparativo">
-            <thead>
-              <tr>
-                <th>Plano</th>
-                <th>Anterior</th>
-                <th>Atual</th>
-                <th>Variação %</th>
-                <th>Falta p/ igualar</th>
-                <th>Excedeu</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody><tr><td colspan="7">—</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="card" style="flex:1">
-        <div class="section-title">Planos sem movimentação no período atual (tinham no anterior)</div>
-        <ul id="listaSemMov"><li>—</li></ul>
-      </div>
-    </div>
-
-    <!-- Tabela principal -->
-    <div class="row" style="flex:1;overflow:hidden">
-      <div class="card" style="flex:1;min-height:0">
-        <div class="controls" style="margin-bottom:8px">
-          <button class="btn secondary" id="btnCSV">Exportar CSV</button>
-          <span class="muted" style="margin-left:auto">Total exibido: <b id="count">0</b></span>
-        </div>
-        <div id="tableWrap">
-          <table id="parcelasTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Empresa</th>
-                <th>Fornecedor</th>
-                <th>Emissão</th>
-                <th>Vencimento</th>
-                <th>Valor</th>
-                <th>Status</th>
-                <th>Conta</th>
-                <th>Meio Pgto</th>
-                <th>Tipo Doc</th>
-                <th>Centro de Custo</th>
-                <th>Plano de Contas</th>
-                <th>Observação</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <footer>
-      <div>Última atualização: <span id="lastUpdate">—</span></div>
-      <div>Fonte: F360 • Cache: <span id="cacheInfo">—</span></div>
-    </footer>
-  </div>
-
-  <!-- Modal Histórico -->
-  <div id="modalHistorico">
-    <div class="box">
-      <header>
-        <h3 id="modalTitulo">Histórico</h3>
-        <button id="btnCloseModal">Fechar</button>
-      </header>
-      <div style="padding:8px 0 0">
-        <canvas id="chartHistorico"></canvas>
-        <div class="hint">Linhas: valores diários do plano no período atual (azul) e no período anterior (cinza).</div>
-      </div>
-    </div>
-  </div>
+<div id="cardsResumo" class="cards"></div>
+<section id="detalhes"></section>
 
 <script>
-/* =================== CONFIG & STATE =================== */
-const SENHA_CORRETA = ""; // defina "12345" para ativar login; vazio = desativa tela
-const UI_KEY = "f360_ui_state_v1";
-const CACHE_DB = "f360_cache_db_v1"; // banco de caches (obj por chave)
-const CACHE_TTL_MS = 1000 * 60 * 60 * 2; // 2 horas
-const BG_REFRESH_MS = 1000 * 60 * 5;     // 5 minutos
+const BASE_URL = "https://mercatto.varejofacil.com/api";
+const USER = "NALBERT SOUZA";       // 🔹 substitua
+const PASS = "99861";         // 🔹 substitua
+const DATA_INICIO = "2025-10-01T00:00:00";
+const DATA_FIM = "2025-10-01T23:59:59";
 
-let charts = {planos:null, evolucao:null, status:null, ccusto:null, comp:null, historico:null};
-let brutoAtual = [];     // dados brutos do período “atual” (sem filtros manuais)
-let filtrados = [];      // dados após filtros da UI
-let dadosAnterior = [];  // período anterior (para deltas)
-
-/* =================== UTILS =================== */
-const $ = sel => document.querySelector(sel);
-const $$ = sel => [...document.querySelectorAll(sel)];
-function fmtBRL(n){return (n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
-function toNumber(v){if(v==null||v==="")return 0;let s=String(v).trim().replace(/^R\$\s*/i,"").replace(/\./g,"").replace(",",".");const n=parseFloat(s);return isNaN(n)?0:n}
-function parseISO(d){return d?new Date(d):null}
-function addDays(d,days){const x=new Date(d);x.setDate(x.getDate()+days);return x}
-function startOfMonth(d){const x=new Date(d);x.setDate(1);x.setHours(0,0,0,0);return x}
-function endOfToday(){const x=new Date();x.setHours(23,59,59,999);return x}
-function sameDayYYYYMMDD(d){return d.toISOString().slice(0,10)}
-function diffDays(a,b){return Math.ceil((b-a)/(1000*60*60*24))}
-function simplify(s){return (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().trim()}
-
-/* =================== LOGIN =================== */
-const loginEl = $("#login");
-if(SENHA_CORRETA){
-  loginEl.style.display = "flex";
-  $("#btnLogin").onclick = ()=>{
-    const v = $("#senhaInput").value;
-    if(v === SENHA_CORRETA){ localStorage.setItem("authSenha", v); loginEl.style.display="none"; }
-    else $("#loginMsg").textContent = "Senha incorreta";
-  };
-  if(localStorage.getItem("authSenha")===SENHA_CORRETA) loginEl.style.display="none";
-}
-
-/* =================== STORAGE (UI & CACHE) =================== */
-function saveUI(){
-  const ui = {
-    tipo: ($('input[name="tipo"]:checked')||{}).value || "Despesa",
-    empresa: $("#empresaSelect").value,
-    inicio: $("#inicio").value,
-    fim: $("#fim").value,
-    tipoDatas: $("#tipoDatas").value,
-    status: $("#statusSelect").value,
-    plano: $("#planoSelect").value,
-    meios: getMeiosSelecionados(),
-    busca: $("#searchBox").value
-  };
-  localStorage.setItem(UI_KEY, JSON.stringify(ui));
-}
-function loadUI(){
-  const ui = JSON.parse(localStorage.getItem(UI_KEY) || "null");
-  if(!ui) return;
-  $$('input[name="tipo"]').forEach(r=>{ r.checked = (r.value===ui.tipo); });
-  $("#empresaSelect").value = ui.empresa || "";
-  $("#inicio").value = ui.inicio || $("#inicio").value;
-  $("#fim").value = ui.fim || $("#fim").value;
-  $("#tipoDatas").value = ui.tipoDatas || "Vencimento";
-  $("#statusSelect").value = ui.status || "";
-  $("#planoSelect").value = ui.plano || "";
-  $("#searchBox").value = ui.busca || "";
-  setTimeout(()=>{
-    ui.meios?.forEach(m=>{
-      const el = [...$("#meioMenu").querySelectorAll('input[type=\"checkbox\"][value]')].find(x=>x.value===m);
-      if(el) el.checked = true;
-    });
-    atualizarTextoMeio();
-  }, 400);
-}
-
-// cache por chave de parâmetros-base (sem filtros manuais de busca/plano após fetch)
-function cacheKey(base){
-  const meio = base.meio || "";
-  return [base.tipo, base.inicio, base.fim, base.tipoDatas, base.empresa||"", base.status||"", meio].join("|");
-}
-function getCacheDB(){
-  try{ return JSON.parse(localStorage.getItem(CACHE_DB) || "{}"); }catch{ return {}; }
-}
-function setCacheDB(db){
-  try{ localStorage.setItem(CACHE_DB, JSON.stringify(db)); }catch(e){ console.warn("Erro salvando cache", e); }
-}
-function readCache(key){
-  const db = getCacheDB();
-  const item = db[key];
-  if(!item) return null;
-  const age = Date.now() - (item.time||0);
-  if(age > CACHE_TTL_MS) return null;
-  return item;
-}
-function writeCache(key, data){
-  const db = getCacheDB();
-  db[key] = { time: Date.now(), data };
-  setCacheDB(db);
-}
-
-/* =================== MULTI-MEIO =================== */
-const meioMenu = $("#meioMenu"), meioInput = $("#meioInput"), meioMulti = $("#meioMulti");
-function getMeiosSelecionados(){
-  return [...meioMenu.querySelectorAll('input[type=\"checkbox\"][value]')].filter(c=>c.checked).map(c=>c.value);
-}
-function atualizarTextoMeio(){
-  const s=getMeiosSelecionados();
-  meioInput.value = s.length ? `${s.length} selecionado(s)` : "Formas de pagamento";
-}
-meioInput.addEventListener("click",()=>meioMulti.classList.toggle("open"));
-document.addEventListener("click",e=>{ if(!meioMulti.contains(e.target)) meioMulti.classList.remove("open"); });
-meioMenu.addEventListener("change",e=>{
-  if(e.target.dataset.bulk==="all"){
-    const on = !!e.target.checked;
-    meioMenu.querySelectorAll('input[type=\"checkbox\"][value]').forEach(c=>c.checked=on);
-  }
-  atualizarTextoMeio();
-  renderTudo();
-});
-
-
-/* =================== FILTROS & POPULADORES =================== */
-function popularFiltros(items){
-  const empresas=[...new Set(items.map(it=>it.DadosDoTitulo?.Empresa?.Nome).filter(Boolean))].sort();
-  const curEmp=$("#empresaSelect").value;
-  $("#empresaSelect").innerHTML='<option value=\"\">-- Todas as empresas --</option>';
-  empresas.forEach(e=>$("#empresaSelect").insertAdjacentHTML("beforeend", `<option value=\"${e}\">${e}</option>`));
-  if(curEmp && empresas.includes(curEmp)) $("#empresaSelect").value = curEmp;
-  if(!$("#empresaSelect").value && empresas.includes("MERCATTO DELÍCIA")) $("#empresaSelect").value="MERCATTO DELÍCIA";
-
-  const curStatus=$("#statusSelect").value;
-  const status=[...new Set(items.map(it=>it.Status).filter(Boolean))].sort();
-  $("#statusSelect").innerHTML='<option value=\"\">-- Todos os status --</option>';
-  status.forEach(s=>$("#statusSelect").insertAdjacentHTML("beforeend", `<option value=\"${s}\">${s}</option>`));
-  if(curStatus && status.includes(curStatus)) $("#statusSelect").value=curStatus;
-
-  const curPlano=$("#planoSelect").value;
-  const planos=[...new Set(items.map(it=>it.Rateio?.[0]?.PlanoDeContas).filter(Boolean))].sort();
-  $("#planoSelect").innerHTML='<option value=\"\">-- Todos os planos --</option>';
-  planos.forEach(p=>$("#planoSelect").insertAdjacentHTML("beforeend", `<option value=\"${p}\">${p}</option>`));
-  if(curPlano && planos.includes(curPlano)) $("#planoSelect").value=curPlano;
-
-  const selAntes=getMeiosSelecionados();
-  const meios=[...new Set(items.map(it=>it.MeioDePagamento).filter(Boolean))].sort();
-  meioMenu.innerHTML="";
-  if(meios.length){
-    meioMenu.insertAdjacentHTML("beforeend", `<label><input type=\"checkbox\" data-bulk=\"all\"> <strong>Selecionar/limpar tudo</strong></label><hr style=\"border:none;border-top:1px solid #eee;margin:6px 0\">`);
-  }
-  meios.forEach(m=>{
-    const checked = selAntes.includes(m);
-    meioMenu.insertAdjacentHTML("beforeend", `<label><input type=\"checkbox\" value=\"${m}\" ${checked?'checked':''}> ${m}</label>`);
+async function login() {
+  const resp = await fetch(`${BASE_URL}/auth`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({ username: USER, password: PASS })
   });
-  atualizarTextoMeio();
+  const data = await resp.json();
+  if (!data.accessToken) throw new Error("Falha no login");
+  return data.accessToken;
 }
 
-function aplicarFiltros(items){
-  const empresa=$("#empresaSelect").value;
-  const status=$("#statusSelect").value;
-  const plano=$("#planoSelect").value;
-  const meiosSel=getMeiosSelecionados().map(simplify);
-  const tipoDatas=$("#tipoDatas").value;
-  const dIni=parseISO($("#inicio").value);
-  const dFim=parseISO($("#fim").value);
-  const q=($("#searchBox").value||"").toLowerCase();
-
-  return items.filter(it=>{
-    const txt=((it.DadosDoTitulo?.ClienteFornecedor?.Nome||"")+" "+(it.DadosDoTitulo?.Empresa?.Nome||"")+" "+(it.DadosDoTitulo?.Observacao||"")).toLowerCase();
-    if(q && !txt.includes(q)) return false;
-    if(empresa && (it.DadosDoTitulo?.Empresa?.Nome||"")!==empresa) return false;
-    if(status && (it.Status||"")!==status) return false;
-    if(plano && (it.Rateio?.[0]?.PlanoDeContas||"")!==plano) return false;
-    if(meiosSel.length){
-      const meio=simplify(it.MeioDePagamento||"");
-      if(!meiosSel.includes(meio)) return false;
-    }
-    const ref = tipoDatas==="Emissão" ? parseISO(it.DadosDoTitulo?.Emissao) : parseISO(it.Vencimento);
-    if(dIni && ref && ref<dIni) return false;
-    if(dFim && ref && ref>dFim) return false;
-    return true;
+async function buscarVendas(token) {
+  const url = `${BASE_URL}/v1/venda/cupons-fiscais?start=0&q=dataVenda=ge=${DATA_INICIO};dataVenda=le=${DATA_FIM}&count=500`;
+  const resp = await fetch(url, {
+    method: "GET",
+    headers: { "Authorization": token, "Accept": "application/json" }
   });
+  const json = await resp.json();
+  return json.items || [];
 }
 
-/* ======== Comparativos helpers ======== */
-function aplicarFiltrosBasicos(items){
-  const empresa=$("#empresaSelect").value;
-  const status=$("#statusSelect").value;
-  const plano=$("#planoSelect").value;
-  const meiosSel=getMeiosSelecionados().map(simplify);
-  const q=($("#searchBox").value||"").toLowerCase();
-  return items.filter(it=>{
-    const txt=((it.DadosDoTitulo?.ClienteFornecedor?.Nome||"")+" "+(it.DadosDoTitulo?.Empresa?.Nome||"")+" "+(it.DadosDoTitulo?.Observacao||"")).toLowerCase();
-    if(q && !txt.includes(q)) return false;
-    if(empresa && (it.DadosDoTitulo?.Empresa?.Nome||"")!==empresa) return false;
-    if(status && (it.Status||"")!==status) return false;
-    if(plano && (it.Rateio?.[0]?.PlanoDeContas||"")!==plano) return false;
-    if(meiosSel.length){
-      const meio=simplify(it.MeioDePagamento||"");
-      if(!meiosSel.includes(meio)) return false;
-    }
-    return true;
-  });
-}
-function union(a,b){const s=new Set([...(a||[]),...(b||[])]);return [...s]}
-function grupoPlano(arr){const m={};arr.forEach(it=>{const k=it.Rateio?.[0]?.PlanoDeContas||"—";m[k]=(m[k]||0)+toNumber(it.ValorBruto)});return m}
-function grupoStatus(arr){const m={};arr.forEach(it=>{const k=it.Status||"—";m[k]=(m[k]||0)+toNumber(it.ValorBruto)});return m}
-function grupoCentro(arr){const m={};arr.forEach(it=>{const k=it.Rateio?.[0]?.CentroDeCusto||"—";m[k]=(m[k]||0)+toNumber(it.ValorBruto)});return m}
-function grupoDia(arr, ref){const m={};arr.forEach(it=>{const d=ref==="Emissão"?(it.DadosDoTitulo?.Emissao||""):(it.Vencimento||"");const k=d?d.split("T")[0]:"";if(k)m[k]=(m[k]||0)+toNumber(it.ValorBruto)});const labels=Object.keys(m).sort();return {labels,values:labels.map(l=>m[l])}}
-function grupoDiaPorPlano(arr, ref, plano){const alvo=simplify(plano);const m={};arr.forEach(it=>{const p=it.Rateio?.[0]?.PlanoDeContas||"—";if(simplify(p)!==alvo) return;const d=ref==="Emissão"?(it.DadosDoTitulo?.Emissao||""):(it.Vencimento||"");const k=d?d.split("T")[0]:"";if(k)m[k]=(m[k]||0)+toNumber(it.ValorBruto)});const labels=Object.keys(m).sort();return {labels,values:labels.map(l=>m[l])}}
-function deltaPerc(atual,anterior){const a=anterior||0;if(a===0)return atual>0?100:0;return ((atual-a)/a)*100}
+function renderizar(vendas){
+  let total = 0, cupons = vendas.length;
+  const caixas = {};
 
-/* =================== KPI & GRÁFICOS =================== */
-function soma(arr){return arr.reduce((s,it)=>s+toNumber(it.ValorBruto),0)}
+  vendas.forEach(v => {
+    const valor = v.valor || 0;
+    const caixa = v.numeroCaixa || "000";
+    total += valor;
 
-function atualizarKPIs(atual, anterior){
-  const totalA = soma(atual), totalB = soma(anterior);
-  const qtdA = atual.length, qtdB = anterior.length;
-  const ticketA = qtdA?totalA/qtdA:0, ticketB = qtdB?totalB/qtdB:0;
+    if (!caixas[caixa]) caixas[caixa] = { total: 0, count: 0, formas: {} };
+    caixas[caixa].total += valor;
+    caixas[caixa].count++;
 
-  const planos = Object.entries(grupoPlano(atual)).sort((a,b)=>b[1]-a[1]);
-  const top = planos[0] || ["—",0];
-  const partTop = totalA? (top[1]/totalA*100) : 0;
-
-  const sts = grupoStatus(atual);
-  const valorAberto = Object.entries(sts).filter(([k])=>simplify(k).includes("ABERTO")).reduce((s,[,v])=>s+v,0);
-  const valorPago = Object.entries(sts).filter(([k])=>simplify(k).includes("PAGO")).reduce((s,[,v])=>s+v,0);
-  const percPago = (valorAberto+valorPago)? ((valorPago/(valorAberto+valorPago))*100) : 0;
-
-  const maior = atual.reduce((m,it)=>{const v=toNumber(it.ValorBruto);return v>m.v?{v, f:(it.DadosDoTitulo?.ClienteFornecedor?.Nome||"—")}:m},{v:0,f:"—"});
-
-  const hoje = new Date();
-  let somaDias=0, contDias=0, qtdAtraso=0, valorAtraso=0;
-  atual.forEach(it=>{
-    const v = parseISO(it.Vencimento);
-    if(v){ somaDias += diffDays(hoje, v); contDias++; if(v < hoje && !simplify(it.Status||"").includes("PAGO")) { qtdAtraso++; valorAtraso += toNumber(it.ValorBruto);} }
-  });
-  const diasMed = contDias? (somaDias/contDias) : 0;
-
-  const dTotal = deltaPerc(totalA,totalB);
-  const dQtd   = deltaPerc(qtdA,qtdB);
-  const dTicket= deltaPerc(ticketA,ticketB);
-
-  $("#kpiTotal").textContent = fmtBRL(totalA);
-  $("#kpiTotalDelta").textContent = (dTotal>=0?"▲ ":"▼ ")+Math.abs(dTotal).toFixed(1)+"% vs período anterior";
-  $("#kpiTotalDelta").className = "delta "+(dTotal>=0?"up":"down");
-
-  $("#kpiQtd").textContent = qtdA.toLocaleString("pt-BR");
-  $("#kpiQtdDelta").textContent = (dQtd>=0?"▲ ":"▼ ")+Math.abs(dQtd).toFixed(1)+"% vs período anterior";
-  $("#kpiQtdDelta").className = "delta "+(dQtd>=0?"up":"down");
-
-  $("#kpiTicket").textContent = fmtBRL(ticketA);
-  $("#kpiTicketDelta").textContent = (dTicket>=0?"▲ ":"▼ ")+Math.abs(dTicket).toFixed(1)+"% vs período anterior";
-  $("#kpiTicketDelta").className = "delta "+(dTicket>=0?"up":"down");
-
-  $("#kpiTopPlano").textContent = top[0];
-  $("#kpiTopPlanoPart").textContent = `${fmtBRL(top[1])} • ${partTop.toFixed(1)}% do total`;
-
-  $("#kpiPago").textContent = `${percPago.toFixed(1)}%`;
-  $("#kpiAbertoValor").textContent = `Abertos: ${fmtBRL(valorAberto)}`;
-
-  $("#kpiMaior").textContent = fmtBRL(maior.v);
-  $("#kpiMaiorForn").textContent = maior.f;
-
-  $("#kpiDias").textContent = isNaN(diasMed)? "—" : diasMed.toFixed(1);
-  $("#kpiDiasObs").textContent = diasMed>=0 ? "em média para vencer" : "em média em atraso";
-
-  $("#kpiAtrasoValor").textContent = fmtBRL(valorAtraso);
-  $("#kpiAtrasoQtd").textContent = `${qtdAtraso} título(s)`;
-}
-
-function kill(c){try{c?.destroy()}catch{}}
-function desenharGraficos(arr){
-  kill(charts.planos);kill(charts.evolucao);kill(charts.status);kill(charts.ccusto);
-
-  const mapPlano = grupoPlano(arr);
-  const top = Object.entries(mapPlano).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  charts.planos = new Chart($("#chartPlanos"), {
-    type:'bar',
-    data:{ labels: top.map(p=>p[0]), datasets:[{ label:'Valor', data: top.map(p=>p[1]) }]},
-    options:{
-      responsive:true,
-      onClick:(_,els)=>{ if(!els?.length) return; const i=els[0].index; $("#planoSelect").value = top[i][0]; renderTudo(); saveUI(); },
-      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:ctx=>fmtBRL(ctx.parsed.y)} } },
-      scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } }
-    }
+    const forma = v.finalizacoes?.[0]?.modalidade || "Desconhecida";
+    if (!caixas[caixa].formas[forma]) caixas[caixa].formas[forma] = { total: 0, count: 0 };
+    caixas[caixa].formas[forma].total += valor;
+    caixas[caixa].formas[forma].count++;
   });
 
-  const ref = $("#tipoDatas").value;
-  const evo = grupoDia(arr, ref);
-  charts.evolucao = new Chart($("#chartEvolucao"), {
-    type:'line',
-    data:{ labels:evo.labels, datasets:[{ label:"Total diário", data:evo.values, tension:.25 }]},
-    options:{ scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } }, plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>fmtBRL(c.parsed.y)} } } }
-  });
+  const media = total / (cupons || 1);
 
-  const mapStatus = grupoStatus(arr);
-  charts.status = new Chart($("#chartStatus"), {
-    type:'doughnut',
-    data:{ labels:Object.keys(mapStatus), datasets:[{ data:Object.values(mapStatus) }]},
-    options:{ plugins:{ legend:{ position:"bottom" }, tooltip:{ callbacks:{ label:c=>`${c.label}: ${fmtBRL(c.parsed)}` } } } }
-  });
+  document.getElementById("cardsResumo").innerHTML = `
+    <div class="card"><h2>Total Vendido</h2><p>R$ ${total.toFixed(2)}</p></div>
+    <div class="card"><h2>Cupons</h2><p>${cupons}</p></div>
+    <div class="card"><h2>Ticket Médio</h2><p>R$ ${media.toFixed(2)}</p></div>
+  `;
 
-  const mapCC = grupoCentro(arr);
-  const topCC = Object.entries(mapCC).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  charts.ccusto = new Chart($("#chartCCusto"), {
-    type:'bar',
-    data:{ labels: topCC.map(x=>x[0]), datasets:[{ data: topCC.map(x=>x[1]) }]},
-    options:{ indexAxis:'y', plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label:c=>fmtBRL(c.parsed.x) } } }, scales:{ x:{ ticks:{ callback:v=>fmtBRL(v) } } } }
-  });
-}
-
-/* ======== COMPARATIVOS (Atual × Anterior) ======== */
-function renderComparativos(){
-  // atual: usar 'filtrados' (já tem filtros + período atual)
-  const arrAtual = filtrados;
-  // anterior: aplicar mesmos filtros básicos no conjunto do período anterior
-  const arrAnterior = aplicarFiltrosBasicos(dadosAnterior || []);
-
-  const mapA = grupoPlano(arrAtual);
-  const mapB = grupoPlano(arrAnterior);
-  const planos = union(Object.keys(mapA), Object.keys(mapB)).sort();
-
-  // build rows
-  const rows = planos.map(p=>{
-    const a = mapA[p]||0, b = mapB[p]||0;
-    const varpct = b>0 ? ((a-b)/b*100) : (a>0?100:0);
-    const falta = Math.max(b-a,0);
-    const exced = a>b ? (a-b) : 0;
-    let status='OK', cls='status-ok';
-    if(b>0 && a/b < 0.85){ status='<85%'; cls='status-bad'; }
-    else if(b>0 && a/b < 0.90){ status='85–90%'; cls='status-warn'; }
-    return {p,a,b,varpct,falta,exced,status,cls};
-  });
-
-  // tabela
-  const tbody = $("#tableComparativo tbody");
-  if(!rows.length){ tbody.innerHTML = '<tr><td colspan="7">Sem dados</td></tr>'; }
-  else{
-    tbody.innerHTML = rows.map(r=>`
-      <tr>
-        <td><a href="#" data-plano="${r.p}" title="Ver histórico">${r.p}</a></td>
-        <td>${fmtBRL(r.b)}</td>
-        <td>${fmtBRL(r.a)}</td>
-        <td>${r.varpct.toFixed(1)}%</td>
-        <td>${fmtBRL(r.falta)}</td>
-        <td>${fmtBRL(r.exced)}</td>
-        <td class="${r.cls}">${r.status}</td>
-      </tr>
-    `).join("");
-  }
-
-  // gráfico
-  kill(charts.comp);
-  charts.comp = new Chart($("#chartCompPlanos"),{
-    type:'bar',
-    data:{
-      labels: rows.map(r=>r.p),
-      datasets:[
-        {label:'Anterior', data: rows.map(r=>r.b)},
-        {label:'Atual',    data: rows.map(r=>r.a)}
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{ tooltip:{ callbacks:{ label:c=>fmtBRL(c.parsed.y) } } },
-      scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } },
-      onClick:(_,els)=>{
-        if(!els?.length) return;
-        const i=els[0].index;
-        $("#planoSelect").value = rows[i].p;
-        renderTudo(); saveUI();
-      }
-    }
-  });
-
-  // lista sem movimentação
-  const sem = planos.filter(p => (mapB[p]||0) > 0 && (mapA[p]||0)===0);
-  $("#listaSemMov").innerHTML = sem.length ? sem.map(s=>`<li>${s}</li>`).join("") : "<li>Nenhum</li>";
-}
-
-/* ======== HISTÓRICO (modal) ======== */
-function abrirHistoricoPlano(plano){
-  const ref = $("#tipoDatas").value;
-  const atual = grupoDiaPorPlano(filtrados, ref, plano);
-  const anterior = grupoDiaPorPlano(aplicarFiltrosBasicos(dadosAnterior||[]), ref, plano);
-  const labels = union(atual.labels, anterior.labels).sort();
-  function mapSeries(series){const m=new Map(series.labels.map((l,i)=>[series.labels[i], series.values[i]])); return labels.map(l=>m.get(l)||0);}
-
-  kill(charts.historico);
-  charts.historico = new Chart($("#chartHistorico"),{
-    type:'line',
-    data:{
-      labels,
-      datasets:[
-        {label:'Anterior', data: mapSeries(anterior), tension:.25},
-        {label:'Atual',    data: mapSeries(atual), tension:.25}
-      ]
-    },
-    options:{ scales:{ y:{ ticks:{ callback:v=>fmtBRL(v) } } }, plugins:{ tooltip:{ callbacks:{ label:c=>fmtBRL(c.parsed.y)} } } }
-  });
-
-  $("#modalTitulo").textContent = `Histórico • ${plano}`;
-  $("#modalHistorico").style.display='flex';
-}
-$("#btnCloseModal").addEventListener('click',()=>$("#modalHistorico").style.display='none');
-$("#modalHistorico").addEventListener('click',e=>{ if(e.target.id==='modalHistorico') $("#modalHistorico").style.display='none'; });
-document.addEventListener('click',e=>{
-  const link = e.target.closest('a[data-plano]');
-  if(link){ e.preventDefault(); abrirHistoricoPlano(link.dataset.plano); }
-});
-
-/* =================== TABELA =================== */
-function renderTabela(arr){
-  const tb = $("#parcelasTable tbody"); tb.innerHTML = "";
-  if(!arr.length){ tb.innerHTML = `<tr><td colspan="13">Nenhum título encontrado</td></tr>`; $("#count").textContent=0; return; }
-  const frag = document.createDocumentFragment();
-  for(const it of arr){
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${it.ParcelaId||""}</td>
-      <td>${it.DadosDoTitulo?.Empresa?.Nome||""}</td>
-      <td>${it.DadosDoTitulo?.ClienteFornecedor?.Nome||""}</td>
-      <td>${(it.DadosDoTitulo?.Emissao||"").split("T")[0]}</td>
-      <td>${(it.Vencimento||"").split("T")[0]}</td>
-      <td>${fmtBRL(toNumber(it.ValorBruto))}</td>
-      <td>${it.Status||""}</td>
-      <td>${it.Conta||""}</td>
-      <td>${it.MeioDePagamento||""}</td>
-      <td>${it.DadosDoTitulo?.TipoDeDocumento||""}</td>
-      <td>${it.Rateio?.[0]?.CentroDeCusto||""}</td>
-      <td>${it.Rateio?.[0]?.PlanoDeContas||""}</td>
-      <td>${it.DadosDoTitulo?.Observacao||""}</td>
+  const detalhes = Object.entries(caixas).map(([cx, info])=>{
+    const formas = Object.entries(info.formas).map(([f, d])=>`
+      <div class="subcard">
+        <h4>${f}</h4>
+        <p>R$ ${d.total.toFixed(2)} • ${d.count} vendas</p>
+      </div>
+    `).join('');
+    return `
+      <section>
+        <h3>Caixa ${cx} — Total R$ ${info.total.toFixed(2)} (${info.count} cupons)</h3>
+        <div class="subcards">${formas}</div>
+      </section>
     `;
-    frag.appendChild(tr);
+  }).join('');
+  document.getElementById("detalhes").innerHTML = detalhes;
+}
+
+(async ()=>{
+  try {
+    document.body.insertAdjacentHTML('beforeend','<p id="loading" style="margin-top:40px;color:var(--muted)">🔄 Conectando à API...</p>');
+    const token = await login();
+    document.getElementById("loading").innerText = "🔄 Carregando vendas...";
+    const vendas = await buscarVendas(token);
+    document.getElementById("loading").remove();
+    renderizar(vendas);
+  } catch (e) {
+    console.error(e);
+    document.body.innerHTML = `<p style="color:red;">Erro: ${e.message}</p>`;
   }
-  tb.appendChild(frag);
-  $("#count").textContent = arr.length.toLocaleString("pt-BR");
-}
-
-/* =================== RENDER TUDO (aplica filtros) =================== */
-function renderTudo(){
-  filtrados = aplicarFiltros(brutoAtual);
-  atualizarKPIs(filtrados, dadosAnterior || []);
-  desenharGraficos(filtrados);
-  renderTabela(filtrados);
-  renderComparativos();
-}
-
-/* =================== CARGA & BACKGROUND REFRESH =================== */
-async function carregarDados({mostrarOverlay=true, usarCachePrimeiro=true, forcar=false}={}){
-  $("#status").textContent = "carregando...";
-  if(mostrarOverlay) $("#loader").style.display="flex";
-
-  const tipo = ($('input[name="tipo"]:checked')||{}).value || "Despesa";
-  const base = {
-    tipo,
-    inicio: $("#inicio").value,
-    fim: $("#fim").value,
-    tipoDatas: $("#tipoDatas").value
-  };
-  const emp = $("#empresaSelect").value, st = $("#statusSelect").value;
-  if(emp) base.empresa = emp;
-  if(st) base.status = st;
-  const meiosSel = getMeiosSelecionados();
-  if(meiosSel.length) base.meio = meiosSel.join(",");
-
-  const key = cacheKey(base);
-  const now = new Date();
-
-  if(usarCachePrimeiro && !forcar){
-    const cached = readCache(key);
-    if(cached){
-      brutoAtual = cached.data || [];
-      popularFiltros(brutoAtual);
-      atualizarTextoMeio();
-      const antKey = previousPeriodKey(base);
-      const cachedAnt = readCache(antKey);
-      dadosAnterior = cachedAnt?.data || [];
-      renderTudo();
-      $("#cacheInfo").textContent = "ON • "+ new Date(cached.time).toLocaleString();
-      $("#status").textContent = "cache";
-    }
-  }
-
-  const baseAnterior = previousPeriod(base);
-  const [atual, anterior] = await Promise.all([
-    fetchParcelasPeriodo(base),
-    fetchParcelasPeriodo(baseAnterior)
-  ]);
-
-  writeCache(key, atual);
-  writeCache(cacheKey(baseAnterior), anterior);
-
-  brutoAtual = atual;
-  dadosAnterior = anterior;
-
-  popularFiltros(brutoAtual);
-  atualizarTextoMeio();
-  renderTudo();
-
-  $("#lastUpdate").textContent = now.toLocaleString();
-  $("#cacheInfo").textContent = "ON • "+ new Date().toLocaleString();
-  $("#loader").style.display="none";
-  $("#status").textContent = "ok";
-}
-
-function previousPeriod(base){
-  const dIni = parseISO(base.inicio), dFim = parseISO(base.fim);
-  const dur = Math.max(1, diffDays(dIni, dFim));
-  const prevIni = new Date(dIni); prevIni.setMonth(prevIni.getMonth()-1);
-  const prevFim = addDays(prevIni, dur);
-  const b = {...base, inicio: sameDayYYYYMMDD(prevIni), fim: sameDayYYYYMMDD(prevFim)};
-  return b;
-}
-function previousPeriodKey(base){ return cacheKey(previousPeriod(base)); }
-
-/* =================== EXPORT CSV =================== */
-function exportCSV(arr){
-  const headers = ["ID","Empresa","Fornecedor","Emissao","Vencimento","Valor","Status","Conta","Meio","TipoDoc","CentroCusto","PlanoContas","Observacao"];
-  const rows = arr.map(it=>[
-    it.ParcelaId||"",
-    it.DadosDoTitulo?.Empresa?.Nome||"",
-    it.DadosDoTitulo?.ClienteFornecedor?.Nome||"",
-    (it.DadosDoTitulo?.Emissao||"").split("T")[0],
-    (it.Vencimento||"").split("T")[0],
-    toNumber(it.ValorBruto).toFixed(2).replace(".",","),
-    it.Status||"",
-    it.Conta||"",
-    it.MeioDePagamento||"",
-    it.DadosDoTitulo?.TipoDeDocumento||"",
-    it.Rateio?.[0]?.CentroDeCusto||"",
-    it.Rateio?.[0]?.PlanoDeContas||"",
-    (it.DadosDoTitulo?.Observacao||"").replace(/\\n/g," ").replace(/;/g,",")
-  ]);
-  const csv = [headers.join(";")].concat(rows.map(r=>r.join(";"))).join("\\n");
-  const blob = new Blob([csv],{type:"text/csv;charset=utf-8"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url; a.download="titulos_f360.csv"; a.click();
-  URL.revokeObjectURL(url);
-}
-
-/* =================== EVENTOS =================== */
-$("#btnLoad").addEventListener("click",()=>{ saveUI(); carregarDados({mostrarOverlay:true,usarCachePrimeiro:true}); });
-$("#btnRefresh").addEventListener("click",()=>{ saveUI(); carregarDados({mostrarOverlay:false,usarCachePrimeiro:false,forcar:true}); });
-$("#btnClearCache").addEventListener("click",()=>{
-  const tipo = ($('input[name="tipo"]:checked')||{}).value || "Despesa";
-  const base = {tipo, inicio:$("#inicio").value, fim:$("#fim").value, tipoDatas:$("#tipoDatas").value};
-  const emp=$("#empresaSelect").value, st=$("#statusSelect").value; const ms=getMeiosSelecionados();
-  if(emp) base.empresa=emp; if(st) base.status=st; if(ms.length) base.meio=ms.join(",");
-  const k1 = cacheKey(base), k2 = previousPeriodKey(base);
-  const db = getCacheDB(); delete db[k1]; delete db[k2]; setCacheDB(db);
-  $("#cacheInfo").textContent = "limpo";
-});
-$("#btnCSV").addEventListener("click",()=>exportCSV(filtrados));
-
-$("#empresaSelect").addEventListener("change",()=>{ saveUI(); renderTudo(); });
-$("#statusSelect").addEventListener("change",()=>{ saveUI(); renderTudo(); });
-$("#planoSelect").addEventListener("change",()=>{ saveUI(); renderTudo(); });
-$("#tipoDatas").addEventListener("change",()=>{ saveUI(); renderTudo(); });
-$("#searchBox").addEventListener("input",()=>{ saveUI(); renderTudo(); });
-$$('input[name="tipo"]').forEach(r=>r.addEventListener("change",()=>{ saveUI(); carregarDados({mostrarOverlay:true,usarCachePrimeiro:true}); }));
-
-$("#inicio").addEventListener("change",()=>saveUI());
-$("#fim").addEventListener("change",()=>saveUI());
-
-/* =================== INICIAL =================== */
-const hoje = endOfToday(); const ini = startOfMonth(hoje);
-$("#inicio").value = sameDayYYYYMMDD(ini);
-$("#fim").value    = sameDayYYYYMMDD(hoje);
-
-carregarDados({mostrarOverlay:true,usarCachePrimeiro:true});
-setInterval(()=>carregarDados({mostrarOverlay:false,usarCachePrimeiro:true}), BG_REFRESH_MS);
-setTimeout(loadUI, 600);
+})();
 </script>
+
 </body>
 </html>
