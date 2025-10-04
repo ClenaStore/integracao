@@ -2,149 +2,65 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Consulta Recebimentos Mercatto</title>
+<title>Painel de Integrações</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b1220;--ink:#e5f0ff;--muted:#a8b3c7;--teal:#06b6d4;--card:#151e2f; }
-  *{box-sizing:border-box;font-family:'Inter',system-ui}
-  body{margin:0;background:var(--bg);color:var(--ink);padding:20px}
-  h1{text-align:center;margin-bottom:24px;color:var(--teal)}
-  .grid{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-bottom:18px}
-  .app-card{
-    background:var(--card);color:var(--ink);padding:18px 22px;border-radius:12px;
-    min-width:280px;cursor:pointer;border:1px solid rgba(255,255,255,.06);
-    display:flex;align-items:center;gap:12px;box-shadow:0 6px 16px rgba(0,0,0,.25)
-  }
-  .app-card .title{font-weight:800;font-size:1.05rem}
-  .app-card .subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
-  /* Modal */
-  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px}
-  .modal.open{display:flex}
-  .modal-content{background:#0f1729;color:var(--ink);border:1px solid rgba(255,255,255,.07);
-    width:min(1100px,96vw);max-height:85vh;overflow:auto;border-radius:14px;padding:18px}
-  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-  .modal-title{font-weight:800;color:var(--teal);font-size:1.1rem}
-  .btn{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-  pre{background:#101827;border:1px solid rgba(255,255,255,.06);color:#00ffc8;border-radius:10px;padding:14px;overflow:auto;font-size:12px}
-  .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:900px){.two-cols{grid-template-columns:1fr}}
-  .totais{display:flex;gap:12px;flex-wrap:wrap}
-  .pill{background:#0b1322;border:1px solid rgba(255,255,255,.06);padding:10px 14px;border-radius:10px;min-width:220px}
-  .pill .label{color:var(--muted);font-size:.85rem}
-  .pill .value{font-weight:900;font-size:1.25rem;margin-top:2px}
+:root {
+  --bg:#0b1220; --card:#101827; --teal:#06b6d4; --ink:#e5f0ff;
+}
+body {
+  background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0;
+}
+h1 { color:var(--teal); font-size:1.6rem; margin-bottom:20px; }
+.cards { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+.card {
+  background:var(--card); border:1px solid rgba(255,255,255,.05); border-radius:12px;
+  padding:30px; width:260px; text-align:center; cursor:pointer; transition:.2s;
+}
+.card:hover { transform:translateY(-4px); box-shadow:0 4px 14px rgba(0,0,0,.4); }
+.card h2 { font-size:1.1rem; margin:0 0 8px; color:var(--teal); }
+.card p { font-size:1.4rem; font-weight:800; margin:0; }
+
+#popup {
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center;
+}
+.popup-content {
+  background:var(--card); padding:20px; border-radius:10px; width:90%; max-width:700px;
+  color:var(--ink); max-height:80vh; overflow:auto;
+}
+.close { float:right; cursor:pointer; font-weight:bold; color:var(--teal); font-size:18px; }
 </style>
 </head>
 <body>
-  <h1>Seu Painel</h1>
+<h1>Painel de Integrações</h1>
 
-  <div class="grid">
-    <div class="app-card" id="openMercatto">
-      <img src="https://img.icons8.com/fluency/48/shopping-cart.png" alt="" width="36" height="36"/>
-      <div>
-        <div class="title">Varejo Fácil — Mercatto</div>
-        <div class="subtitle">Fechamento automático diário (ontem)</div>
-      </div>
-    </div>
-    <!-- no futuro: adicione aqui os outros 3 apps/cards -->
+<div class="cards">
+  <div class="card" onclick="abrirPopup()">
+    <h2>Varejo Fácil Mercatto</h2>
+    <p>Ver dados do dia anterior</p>
   </div>
+</div>
 
-  <!-- MODAL -->
-  <div class="modal" id="mercattoModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="modal-title">Varejo Fácil — Mercatto • Dados de <span id="diaLabel"></span></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" id="btnExportar">Exportar para planilha agora</button>
-          <button class="btn" style="background:#334155" id="btnFechar">Fechar</button>
-        </div>
-      </div>
-
-      <div class="two-cols">
-        <div>
-          <div class="totais">
-            <div class="pill"><div class="label">Total Geral</div><div class="value" id="tg">R$ 0,00</div></div>
-            <div class="pill"><div class="label">Restaurante Mercatto</div><div class="value" id="tr">R$ 0,00</div></div>
-            <div class="pill"><div class="label">Empório Mercatto</div><div class="value" id="te">R$ 0,00</div></div>
-          </div>
-          <h3 style="margin:16px 0 6px">Resumo por caixa</h3>
-          <pre id="resumo">Carregando…</pre>
-        </div>
-        <div>
-          <h3 style="margin:0 0 6px">JSON bruto (amostra/ontem)</h3>
-          <pre id="json">Carregando…</pre>
-        </div>
-      </div>
-    </div>
+<div id="popup">
+  <div class="popup-content">
+    <span class="close" onclick="fecharPopup()">×</span>
+    <h2>Dados Varejo Fácil - Dia Anterior</h2>
+    <pre id="dadosJson">Carregando...</pre>
   </div>
+</div>
 
 <script>
-const fmtBRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-// abre modal
-document.getElementById('openMercatto').onclick = () => abrirModalOntem();
-document.getElementById('btnFechar').onclick = () => document.getElementById('mercattoModal').classList.remove('open');
-
-// botão exportar
-document.getElementById('btnExportar').onclick = async () => {
-  const btn = document.getElementById('btnExportar');
-  btn.disabled = true; btn.textContent = 'Exportando…';
-  try{
-    const r = await fetch('/api/cron-mercatto?run=now',{method:'POST'});
-    const j = await r.json();
-    alert(j.ok ? 'Exportado com sucesso!' : ('Falha: '+(j.error||'desconhecida')));
-  }catch(e){ alert('Erro: '+e.message); }
-  btn.disabled = false; btn.textContent = 'Exportar para planilha agora';
-};
-
-async function abrirModalOntem(){
-  const modal = document.getElementById('mercattoModal');
-  const hoje = new Date();
-  const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()-1); // ontem
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth()+1).padStart(2,'0');
-  const dd = String(d.getDate()).padStart(2,'0');
-  const dia = `${yyyy}-${mm}-${dd}`;
-  document.getElementById('diaLabel').textContent = `${dd}/${mm}/${yyyy}`;
-
-  modal.classList.add('open');
-  document.getElementById('resumo').textContent = 'Carregando…';
-  document.getElementById('json').textContent = 'Carregando…';
-  document.getElementById('tg').textContent = fmtBRL(0);
-  document.getElementById('tr').textContent = fmtBRL(0);
-  document.getElementById('te').textContent = fmtBRL(0);
-
-  try{
-    // usa a mesma rota do CRON mas em modo "preview" (sem escrever na planilha)
-    const r = await fetch(`/api/cron-mercatto?date=${dia}&dryRun=true`, { method:'POST' });
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error||'Falha');
-
-    // cards
-    document.getElementById('tg').textContent = fmtBRL(j.totais.totalGeral||0);
-    document.getElementById('tr').textContent = fmtBRL(j.totais.totalRestaurante||0);
-    document.getElementById('te').textContent = fmtBRL(j.totais.totalEmporio||0);
-
-    // resumo por caixa
-    let texto = '';
-    Object.keys(j.resumoPorCaixa).sort((a,b)=>+a-+b).forEach(caixa=>{
-      texto += `Caixa ${caixa}\n`;
-      let soma=0;
-      for(const [grupo,info] of Object.entries(j.resumoPorCaixa[caixa])){
-        texto += `├─ ${grupo}: ${fmtBRL(info.total)} (${info.count} vendas)\n`;
-        soma += info.total;
-      }
-      texto += `→ Total Caixa ${caixa}: ${fmtBRL(soma)}\n\n`;
-    });
-    document.getElementById('resumo').textContent = texto || 'Sem dados.';
-
-    // json (amostra)
-    document.getElementById('json').textContent = JSON.stringify(j.sample || {}, null, 2);
-  }catch(e){
-    document.getElementById('resumo').textContent = 'Erro: '+e.message;
-    document.getElementById('json').textContent = 'Erro: '+e.message;
-  }
+async function abrirPopup() {
+  document.getElementById('popup').style.display = 'flex';
+  const resp = await fetch('/api/coletarVarejoFacil');
+  const dados = await resp.json();
+  document.getElementById('dadosJson').textContent = JSON.stringify(dados, null, 2);
+}
+function fecharPopup() {
+  document.getElementById('popup').style.display = 'none';
 }
 </script>
 </body>
