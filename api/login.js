@@ -1,28 +1,18 @@
+import axios from "axios";
+
 export default async function handler(req, res) {
-  if (req.method === "POST") {
-    try {
-      const response = await fetch("https://mercatto.varejofacil.com/api/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: process.env.VAREJO_USER,
-          password: process.env.VAREJO_PASS
-        })
-      });
+  if (req.method !== "POST") return res.status(405).json({ error: "Método não permitido" });
 
-      const data = await response.json();
+  try {
+    const response = await axios.post("https://mercatto.varejofacil.com/api/auth", {
+      username: process.env.API_USER,
+      password: process.env.API_PASS
+    }, {
+      headers: { "Content-Type": "application/json" }
+    });
 
-      if (data.accessToken) {
-        // Retorna token puro
-        return res.status(200).json({ token: data.accessToken });
-      } else {
-        return res.status(401).json({ error: "Login falhou", data });
-      }
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  } else {
-    res.setHeader("Allow", ["POST"]);
-    res.status(405).end(`Método ${req.method} não permitido`);
+    return res.status(200).json(response.data);
+  } catch (error) {
+    return res.status(500).json({ error: "Erro no login", details: error.message });
   }
 }
