@@ -51,7 +51,7 @@ export default async function handler(req) {
 
     let r = await fetch(`${VAREJO_URL}/api/v1/pdv/recebimentos?${qs.toString()}`, {
       headers: {
-        'Authorization': `Bearer ${cachedToken}`,
+        'Authorization':${cachedToken}`,
         'Accept': 'application/json'
       }
     });
