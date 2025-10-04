@@ -1,0 +1,16 @@
+{
+  "buildCommand": "echo Build by Vercel",
+  "outputDirectory": ".",
+  "framework": null,
+  "functions": {
+    "api/*.js": {
+      "runtime": "edge"
+    }
+  },
+  "routes": [
+    { "src": "/public/(.*)", "dest": "/public/$1" },
+    { "src": "/src/(.*)", "dest": "/src/$1" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
