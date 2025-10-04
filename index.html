@@ -6,170 +6,146 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#0b1220;--ink:#e5f0ff;--muted:#a8b3c7;--teal:#06b6d4; }
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui;padding:20px;}
-  h1{text-align:center;margin-bottom:20px;color:var(--teal);}
-  .controls{text-align:center;margin-bottom:20px;}
-  input,button{padding:8px 10px;margin:4px;border-radius:6px;border:none;font-size:14px;}
-  button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
-  #cards{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-bottom:18px}
-  .card{background:#101827;padding:14px 22px;border-radius:10px;border:1px solid rgba(255,255,255,.06);min-width:220px;text-align:center}
-  .card h2{margin:0 0 4px;color:var(--muted);font-size:.9rem}
-  .card p{margin:0;font-weight:800;font-size:1.35rem}
-  #layout{display:flex;gap:40px;align-items:flex-start}
-  #resumo{width:35%;white-space:pre;line-height:1.5;font-size:14px}
-  #saida{flex:1;background:#111a2e;padding:20px;border-radius:8px;overflow:auto;font-size:12px;color:#00ffaa}
-  @media(max-width:900px){#layout{flex-direction:column}#resumo{width:100%}}
+  :root { --bg:#0b1220;--ink:#e5f0ff;--muted:#a8b3c7;--teal:#06b6d4;--card:#151e2f; }
+  *{box-sizing:border-box;font-family:'Inter',system-ui}
+  body{margin:0;background:var(--bg);color:var(--ink);padding:20px}
+  h1{text-align:center;margin-bottom:24px;color:var(--teal)}
+  .grid{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-bottom:18px}
+  .app-card{
+    background:var(--card);color:var(--ink);padding:18px 22px;border-radius:12px;
+    min-width:280px;cursor:pointer;border:1px solid rgba(255,255,255,.06);
+    display:flex;align-items:center;gap:12px;box-shadow:0 6px 16px rgba(0,0,0,.25)
+  }
+  .app-card .title{font-weight:800;font-size:1.05rem}
+  .app-card .subtitle{color:var(--muted);font-size:.9rem;margin-top:2px}
+  /* Modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px}
+  .modal.open{display:flex}
+  .modal-content{background:#0f1729;color:var(--ink);border:1px solid rgba(255,255,255,.07);
+    width:min(1100px,96vw);max-height:85vh;overflow:auto;border-radius:14px;padding:18px}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .modal-title{font-weight:800;color:var(--teal);font-size:1.1rem}
+  .btn{background:var(--teal);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  pre{background:#101827;border:1px solid rgba(255,255,255,.06);color:#00ffc8;border-radius:10px;padding:14px;overflow:auto;font-size:12px}
+  .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:900px){.two-cols{grid-template-columns:1fr}}
+  .totais{display:flex;gap:12px;flex-wrap:wrap}
+  .pill{background:#0b1322;border:1px solid rgba(255,255,255,.06);padding:10px 14px;border-radius:10px;min-width:220px}
+  .pill .label{color:var(--muted);font-size:.85rem}
+  .pill .value{font-weight:900;font-size:1.25rem;margin-top:2px}
 </style>
 </head>
 <body>
-  <h1>Consulta Recebimentos Mercatto</h1>
+  <h1>Seu Painel</h1>
 
-  <div class="controls">
-    <input type="date" id="dataInicio">
-    <input type="time" id="horaInicio" value="00:00">
-    <input type="date" id="dataFim">
-    <input type="time" id="horaFim" value="23:59">
-    <button onclick="consultar()">Consultar</button>
+  <div class="grid">
+    <div class="app-card" id="openMercatto">
+      <img src="https://img.icons8.com/fluency/48/shopping-cart.png" alt="" width="36" height="36"/>
+      <div>
+        <div class="title">Varejo Fácil — Mercatto</div>
+        <div class="subtitle">Fechamento automático diário (ontem)</div>
+      </div>
+    </div>
+    <!-- no futuro: adicione aqui os outros 3 apps/cards -->
   </div>
 
-  <div id="cards">
-    <div class="card"><h2>Total Geral</h2><p id="totalGeral">R$ 0,00</p></div>
-    <div class="card"><h2>Restaurante Mercatto</h2><p id="totalRestaurante">R$ 0,00</p></div>
-    <div class="card"><h2>Empório Mercatto</h2><p id="totalEmporio">R$ 0,00</p></div>
-  </div>
+  <!-- MODAL -->
+  <div class="modal" id="mercattoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Varejo Fácil — Mercatto • Dados de <span id="diaLabel"></span></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="btnExportar">Exportar para planilha agora</button>
+          <button class="btn" style="background:#334155" id="btnFechar">Fechar</button>
+        </div>
+      </div>
 
-  <div id="layout">
-    <div id="resumo">Aguardando consulta...</div>
-    <pre id="saida">Aguardando consulta...</pre>
+      <div class="two-cols">
+        <div>
+          <div class="totais">
+            <div class="pill"><div class="label">Total Geral</div><div class="value" id="tg">R$ 0,00</div></div>
+            <div class="pill"><div class="label">Restaurante Mercatto</div><div class="value" id="tr">R$ 0,00</div></div>
+            <div class="pill"><div class="label">Empório Mercatto</div><div class="value" id="te">R$ 0,00</div></div>
+          </div>
+          <h3 style="margin:16px 0 6px">Resumo por caixa</h3>
+          <pre id="resumo">Carregando…</pre>
+        </div>
+        <div>
+          <h3 style="margin:0 0 6px">JSON bruto (amostra/ontem)</h3>
+          <pre id="json">Carregando…</pre>
+        </div>
+      </div>
+    </div>
   </div>
 
 <script>
-const formasPagamento=[{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"12","descricao":"PGTO ONLINE DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"34","descricao":"MARKETING"},{"id":"28","descricao":"BOLETO DELICIA INDUS"},{"id":"29","descricao":"VOUCHER"},{"id":"10","descricao":"BOLETO"},{"id":"30","descricao":"PGT ONLINE DELIVERY"},{"id":"14","descricao":"PGTO ONLINE DINHEIRO"},{"id":"13","descricao":"PGTO ONLINE PIX"},{"id":"11","descricao":"PGTO ONLINE CREDITO"},{"id":"4","descricao":"PIX CNPJ"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"33","descricao":"VOUCHER POS"},{"id":"1","descricao":"DINHEIRO"},{"id":"35","descricao":"VALE MERCATTO"},{"id":"36","descricao":"PREJUIZO"},{"id":"16","descricao":"PIX TEF"},{"id":"31","descricao":"PGT ONLINE IFOOD"},{"id":"20","descricao":"BOLETO FAMILY PRODUT"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"22","descricao":"BOLETO DELICIA PRODU"},{"id":"24","descricao":"BOLETO ALL TIME CHOP"},{"id":"21","descricao":"BOLETO FOODS TIME"},{"id":"23","descricao":"BOLETO MEOS GOURMET"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"}];
+const fmtBRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-const grupos={
-  "crédito":["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
-  "débito":["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
-  "pix":["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
-  "online":["pagamento online","pagamentos online","refeicao","cart alimentacao"],
-  "consumo interno":["funcionario","convenio empresa","consumo funcionarios","consumo musicos"],
-  "boleto":["boleto"],
-  "crediário":["crediario","crediario clientes"],
-  "voucher":["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa"],
-  "dinheiro":["dinheiro","pgto online dinheiro"],
-  "bonificação":["bonificacao"],
-  "catálogo delivery":["catalogo delivery","catálogo delivery"],
-  "consumo sócio":["socio","consumo sócio","consumo socio"],
-  "marketing":["marketing"],
-  "transferência bancária":["transferencia bancar","transferencia bancaria"],
-  "erros garçom":["erros garcons"],
-  "sem faturamento":["sem faturamento"],
-  "outros":[]
+// abre modal
+document.getElementById('openMercatto').onclick = () => abrirModalOntem();
+document.getElementById('btnFechar').onclick = () => document.getElementById('mercattoModal').classList.remove('open');
+
+// botão exportar
+document.getElementById('btnExportar').onclick = async () => {
+  const btn = document.getElementById('btnExportar');
+  btn.disabled = true; btn.textContent = 'Exportando…';
+  try{
+    const r = await fetch('/api/cron-mercatto?run=now',{method:'POST'});
+    const j = await r.json();
+    alert(j.ok ? 'Exportado com sucesso!' : ('Falha: '+(j.error||'desconhecida')));
+  }catch(e){ alert('Erro: '+e.message); }
+  btn.disabled = false; btn.textContent = 'Exportar para planilha agora';
 };
 
-const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const normaliza = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-function encontrarGrupo(desc){const d=normaliza(desc);for(const [g,ts] of Object.entries(grupos)){if(ts.some(t=>d.includes(t))) return g}return "outros"}
+async function abrirModalOntem(){
+  const modal = document.getElementById('mercattoModal');
+  const hoje = new Date();
+  const d = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()-1); // ontem
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  const dia = `${yyyy}-${mm}-${dd}`;
+  document.getElementById('diaLabel').textContent = `${dd}/${mm}/${yyyy}`;
 
-function valorFinalizacaoLiquido(f){
-  const v  = Number(f.valor||0);
-  const tr = Number(f.troco||0);
-  const td = Number(f.trocoDoacao||0);
-  const dm = Number(f.descontoMoeda||0);
-  const jp = Number(f.jurosPlano||0);
-  return v - tr - td - dm + jp;
-}
-
-function toDateLocal(v){
-  const hhmm = String(v.hora||"0000").padStart(4,"0");
-  return new Date(`${v.data}T${hhmm.slice(0,2)}:${hhmm.slice(2)}:00`);
-}
-
-async function consultar(){
-  const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value;
-  const horaInicio = document.getElementById('horaInicio').value;
-  const horaFim    = document.getElementById('horaFim').value;
-  const saida  = document.getElementById('saida');
-  const resumo = document.getElementById('resumo');
-
-  saida.textContent  = "🔄 Buscando dados...";
-  resumo.textContent = "🔄 Processando...";
+  modal.classList.add('open');
+  document.getElementById('resumo').textContent = 'Carregando…';
+  document.getElementById('json').textContent = 'Carregando…';
+  document.getElementById('tg').textContent = fmtBRL(0);
+  document.getElementById('tr').textContent = fmtBRL(0);
+  document.getElementById('te').textContent = fmtBRL(0);
 
   try{
-    // 1) Login
-    const loginResp = await fetch('/api/login',{method:'POST'});
-    const {accessToken} = await loginResp.json();
+    // usa a mesma rota do CRON mas em modo "preview" (sem escrever na planilha)
+    const r = await fetch(`/api/cron-mercatto?date=${dia}&dryRun=true`, { method:'POST' });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'Falha');
 
-    // 2) Busca de dados
-    const resp = await fetch('/api/recebimentos',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim,horaInicio,horaFim})
-    });
-    const raw = await resp.json();
-    saida.textContent = JSON.stringify(raw,null,2);
+    // cards
+    document.getElementById('tg').textContent = fmtBRL(j.totais.totalGeral||0);
+    document.getElementById('tr').textContent = fmtBRL(j.totais.totalRestaurante||0);
+    document.getElementById('te').textContent = fmtBRL(j.totais.totalEmporio||0);
 
-    const vendas = raw.items || [];
-
-    // 3) Filtro por data/hora local
-    const start = new Date(`${dataInicio}T${horaInicio}:00`);
-    const end   = new Date(`${dataFim}T${horaFim}:59`);
-    const filtradas = vendas.filter(v=>{
-      const d = toDateLocal(v);
-      return d >= start && d <= end;
-    });
-
-    // 4) Totais gerais
-    let totalGeral=0,totalEmporio=0,totalRestaurante=0;
-    filtradas.forEach(v=>{
-      const cx=parseInt(v.numeroCaixa||"0",10);
-      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
-      const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
-      totalGeral+=somaCupom;
-      if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
-      if(cx>5) totalRestaurante+=somaCupom;
-    });
-
-    document.getElementById('totalGeral').innerText=brl(totalGeral);
-    document.getElementById('totalEmporio').innerText=brl(totalEmporio);
-    document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
-
-    // 5) Resumo por caixa
-    const caixas={};
-    filtradas.forEach(v=>{
-      const cx=v.numeroCaixa||"000";
-      if(!caixas[cx]) caixas[cx]={};
-      (v.finalizacoes||[]).forEach(f=>{
-        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
-        const nome=forma?forma.descricao:"Desconhecida";
-        const grupo=encontrarGrupo(nome);
-        const val=valorFinalizacaoLiquido(f);
-        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
-        caixas[cx][grupo].total+=val;
-        caixas[cx][grupo].count++;
-      });
-    });
-
-    const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
-    let html='';
-    for(const cx of caixasOrdenadas){
-      html+=`Caixa ${cx}\n`;
-      let somaCaixa=0;
-      for(const [g,info] of Object.entries(caixas[cx])){
-        html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
-        somaCaixa+=info.total;
+    // resumo por caixa
+    let texto = '';
+    Object.keys(j.resumoPorCaixa).sort((a,b)=>+a-+b).forEach(caixa=>{
+      texto += `Caixa ${caixa}\n`;
+      let soma=0;
+      for(const [grupo,info] of Object.entries(j.resumoPorCaixa[caixa])){
+        texto += `├─ ${grupo}: ${fmtBRL(info.total)} (${info.count} vendas)\n`;
+        soma += info.total;
       }
-      // 💰 soma total do caixa
-      html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
-    }
-    resumo.textContent=html||'Nenhum dado no recorte selecionado.';
+      texto += `→ Total Caixa ${caixa}: ${fmtBRL(soma)}\n\n`;
+    });
+    document.getElementById('resumo').textContent = texto || 'Sem dados.';
+
+    // json (amostra)
+    document.getElementById('json').textContent = JSON.stringify(j.sample || {}, null, 2);
   }catch(e){
-    saida.textContent='Erro: '+e.message;
-    resumo.textContent='Erro: '+e.message;
+    document.getElementById('resumo').textContent = 'Erro: '+e.message;
+    document.getElementById('json').textContent = 'Erro: '+e.message;
   }
 }
 </script>
-
 </body>
 </html>
