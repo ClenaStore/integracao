@@ -1,174 +1,146 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Recebimentos • Mercatto</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      background: #f4f6fb;
-      color: #1f2937;
+    :root{
+      --bg:#f4f6fb; --text:#111827; --muted:#6b7280; --card:#fff; --brand:#2563eb; --danger:#dc2626;
+      --shadow:0 8px 26px rgba(0,0,0,.08);
     }
-    header {
-      padding: 20px;
-      text-align: center;
-      font-size: 1.5em;
-      font-weight: bold;
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    header{padding:24px 16px;text-align:center;font-weight:800;font-size:clamp(20px,2.5vw,36px)}
+    .filters{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;align-items:center;margin:0 auto 18px;padding:0 12px}
+    .grp{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:600}
+    input[type="date"],input[type="time"]{
+      padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;min-width:160px;color:var(--text)
     }
-    .filtros {
-      text-align: center;
-      margin-bottom: 20px;
+    button{
+      padding:12px 16px;border-radius:12px;border:none;background:var(--brand);color:#fff;font-weight:700;cursor:pointer;
+      box-shadow:var(--shadow);transition:transform .08s ease;
     }
-    .filtros input, .filtros button {
-      padding: 8px;
-      margin: 5px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+    button:active{transform:translateY(1px)}
+    #err{color:var(--danger);text-align:center;font-weight:700;margin:6px 0 10px}
+    .cards{max-width:1300px;margin:0 auto 40px;padding:0 16px;display:grid;grid-template-columns:1fr;gap:16px}
+    @media(min-width:1000px){.cards{grid-template-columns:1fr 1fr}}
+    .card{
+      background:var(--card);border-radius:16px;box-shadow:var(--shadow);padding:22px 20px;min-height:120px
     }
-    .filtros button {
-      background: #2563eb;
-      color: white;
-      border: none;
-      cursor: pointer;
+    .card h3{margin:0 0 12px;font-size:20px}
+    .ln{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px dashed #eef1f6}
+    .ln:last-child{border-bottom:none}
+    .name{font-weight:700}
+    .val{font-variant-numeric:tabular-nums;font-weight:800}
+    #overlay{
+      position:fixed;inset:0;background:rgba(255,255,255,.6);display:none;place-items:center;z-index:9999;font-weight:800;
+      color:var(--brand);backdrop-filter:saturate(150%) blur(2px)
     }
-    .cards {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-      margin: 0 auto;
-      max-width: 1200px;
-    }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-      flex: 1;
-      min-width: 320px;
-    }
-    .linha {
-      margin: 6px 0;
-      font-size: 1rem;
-    }
-    .linha span {
-      font-weight: bold;
-    }
-    .erro {
-      text-align: center;
-      color: red;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-    #overlay {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(255,255,255,0.8);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #2563eb;
-    }
+    .pill{display:inline-flex;gap:8px;align-items:center;background:#eef2ff;color:#3730a3;padding:6px 10px;border-radius:999px;font-weight:700}
   </style>
 </head>
 <body>
   <header>Recebimentos</header>
 
-  <div class="filtros">
-    <label>Data Inicial:</label> <input type="date" id="dataInicial">
-    <label>Hora Inicial:</label> <input type="time" id="horaInicial" value="08:00">
-    <br>
-    <label>Data Final:</label> <input type="date" id="dataFinal">
-    <label>Hora Final:</label> <input type="time" id="horaFinal" value="23:59">
-    <br>
-    <button onclick="carregar()">Filtrar</button>
+  <div class="filters">
+    <div class="grp">Data Inicial: <input id="dIni" type="date"></div>
+    <div class="grp">Hora Inicial: <input id="hIni" type="time" value="08:00"></div>
+    <div class="grp">Data Final: <input id="dFim" type="date"></div>
+    <div class="grp">Hora Final: <input id="hFim" type="time" value="23:59"></div>
+    <button id="bt">Filtrar</button>
   </div>
 
-  <div id="overlay">⏳ Processando...</div>
-  <div id="erro" class="erro"></div>
+  <div id="err"></div>
 
   <div class="cards">
-    <div class="card" id="restaurante">
-      <h3>CARNEIRO MERCATTO RESTAURANTE</h3>
-      <div id="restaurante-valores"></div>
+    <div class="card">
+      <h3>CARNEIRO MERCATTO RESTAURANTE <span id="almocoPill" class="pill" style="display:none;">🍽️ Almoço: <span id="almocoVal">R$ 0,00</span></span></h3>
+      <div id="rest"></div>
     </div>
-    <div class="card" id="emporio">
+    <div class="card">
       <h3>CARNEIRO MERCATTO EMPÓRIO</h3>
-      <div id="emporio-valores"></div>
+      <div id="emp"></div>
     </div>
   </div>
 
-  <script>
-    const API_URL = "/api";
+  <div id="overlay">⏳ Processando…</div>
 
-    const categorias = {
-      "dinheiro": "💵",
-      "crédito": "💳",
-      "débito": "🏧",
-      "consumo interno": "🍽️",
-      "online": "🌐",
-      "bonificação": "🎁",
-      "pix": "⚡",
-      "voucher": "🎟️",
-      "boleto": "📦",
-      "crediário": "📒",
-      "catálogo delivery": "📱",
-      "consumo sócio": "👥",
-      "marketing": "📢",
-      "transferência bancária": "🏦",
-      "erros garçom": "🧾",
-      "sem faturamento": "🚫",
-      "outros": "❇️"
+  <script>
+    const EMOJIS = {
+      "dinheiro":"💵","crédito":"💳","débito":"🏧","pix":"⚡","online":"🌐","consumo interno":"🍽️",
+      "bonificação":"🎁","voucher":"🎟️","boleto":"📦","crediário":"📒","catálogo delivery":"📱",
+      "consumo sócio":"👥","marketing":"📢","transferência bancária":"🏦","erros garçom":"🧾",
+      "sem faturamento":"🚫","outros":"❇️"
     };
 
-    async function carregar() {
-      document.getElementById("overlay").style.display = "flex";
-      document.getElementById("erro").textContent = "";
-      try {
-        const dataIni = document.getElementById("dataInicial").value;
-        const dataFim = document.getElementById("dataFinal").value;
-        const horaIni = document.getElementById("horaInicial").value;
-        const horaFim = document.getElementById("horaFinal").value;
+    const $ = s => document.querySelector(s);
+    const BRL = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-        if (!dataIni || !dataFim) throw new Error("Informe as datas");
+    // default datas: hoje
+    const today = new Date().toISOString().slice(0,10);
+    $('#dIni').value = today;
+    $('#dFim').value = today;
 
-        const url = `${API_URL}/recebimentos?dataIni=${dataIni}T${horaIni}:00&dataFim=${dataFim}T${horaFim}:00`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("Erro ao buscar dados");
+    $('#bt').addEventListener('click', carregar);
+    window.addEventListener('load', carregar);
 
-        const dados = await res.json();
-        render(dados);
-      } catch (err) {
-        document.getElementById("erro").textContent = err.message;
-      } finally {
-        document.getElementById("overlay").style.display = "none";
+    function buildISO(d, t){
+      // d = YYYY-MM-DD | t = HH:MM
+      return `${d}T${t}:00`;
+    }
+
+    async function carregar(){
+      $('#err').textContent = '';
+      $('#overlay').style.display = 'grid';
+
+      const dataIni = buildISO($('#dIni').value, $('#hIni').value || '00:00');
+      const dataFim = buildISO($('#dFim').value, $('#hFim').value || '23:59');
+
+      try{
+        const url = `/api/recebimentos?dataIni=${encodeURIComponent(dataIni)}&dataFim=${encodeURIComponent(dataFim)}`;
+        const r = await fetch(url);
+        if(!r.ok) throw new Error(`API ${r.status}`);
+        const data = await r.json();
+
+        renderSec('#rest', data.restaurante);
+        renderSec('#emp',  data.emporio);
+
+        if(data.almoco && data.almoco > 0){
+          $('#almocoVal').textContent = BRL(data.almoco);
+          $('#almocoPill').style.display = 'inline-flex';
+        }else{
+          $('#almocoPill').style.display = 'none';
+        }
+      }catch(e){
+        $('#err').textContent = 'Erro ao buscar dados';
+        console.error(e);
+      }finally{
+        $('#overlay').style.display = 'none';
       }
     }
 
-    function render(dados) {
-      ["restaurante", "emporio"].forEach(sec => {
-        const div = document.getElementById(`${sec}-valores`);
-        div.innerHTML = "";
-        const catVals = dados[sec];
-        Object.keys(catVals).forEach(cat => {
-          if (catVals[cat] > 0) {
-            const linha = document.createElement("div");
-            linha.className = "linha";
-            linha.innerHTML = `${categorias[cat] || "❇️"} <span>${cat.toUpperCase()}:</span> R$ ${catVals[cat].toFixed(2)}`;
-            div.appendChild(linha);
-          }
+    function renderSec(sel, obj){
+      const el = document.querySelector(sel);
+      el.innerHTML = '';
+      // só mostra modalidades com valor > 0
+      Object.entries(obj)
+        .filter(([,v])=>v>0)
+        .sort((a,b)=>b[1]-a[1])
+        .forEach(([k,v])=>{
+          const div = document.createElement('div');
+          div.className = 'ln';
+          div.innerHTML = `
+            <div class="name">${EMOJIS[k] || '❇️'} ${k.toUpperCase()}</div>
+            <div class="val">${BRL(v)}</div>
+          `;
+          el.appendChild(div);
         });
-      });
-    }
 
-    const hoje = new Date().toISOString().split("T")[0];
-    document.getElementById("dataInicial").value = hoje;
-    document.getElementById("dataFinal").value = hoje;
+      if(!el.children.length){
+        el.innerHTML = `<div class="ln"><div class="name" style="color:#9ca3af">Sem movimentação</div><div class="val">—</div></div>`;
+      }
+    }
   </script>
 </body>
 </html>
