@@ -2,65 +2,96 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Painel de Integrações</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Financeiro • Mercatto</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#0b1220; --card:#101827; --teal:#06b6d4; --ink:#e5f0ff;
+  --bg:#0b1220; --card:#101827; --ink:#e5f0ff; --muted:#a8b3c7;
+  --teal:#06b6d4; --green:#16a34a; --red:#ef4444;
 }
 body {
-  background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0;
+  margin:0; font-family:'Inter',system-ui; background:var(--bg); color:var(--ink);
+  display:flex; flex-direction:column; align-items:center; padding:40px 10px;
 }
-h1 { color:var(--teal); font-size:1.6rem; margin-bottom:20px; }
-.cards { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+h1 {
+  color:var(--teal); font-size:1.8rem; margin-bottom:30px;
+}
 .card {
-  background:var(--card); border:1px solid rgba(255,255,255,.05); border-radius:12px;
-  padding:30px; width:260px; text-align:center; cursor:pointer; transition:.2s;
+  background:var(--card); padding:30px; border-radius:12px; border:1px solid rgba(255,255,255,.08);
+  width:260px; text-align:center; cursor:pointer; transition:transform .2s;
 }
-.card:hover { transform:translateY(-4px); box-shadow:0 4px 14px rgba(0,0,0,.4); }
-.card h2 { font-size:1.1rem; margin:0 0 8px; color:var(--teal); }
-.card p { font-size:1.4rem; font-weight:800; margin:0; }
+.card:hover { transform:scale(1.03); }
+.card h2 { margin:0; font-size:1.1rem; color:var(--muted); }
+.card p { margin:8px 0 0; font-weight:800; font-size:1.4rem; color:var(--ink); }
 
 #popup {
-  position:fixed; top:0; left:0; width:100%; height:100%;
-  background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center;
+  display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(0,0,0,.7); backdrop-filter:blur(4px);
+  justify-content:center; align-items:center; z-index:10;
 }
 .popup-content {
-  background:var(--card); padding:20px; border-radius:10px; width:90%; max-width:700px;
-  color:var(--ink); max-height:80vh; overflow:auto;
+  background:var(--card); border-radius:12px; padding:20px; width:90%; max-width:700px; color:var(--ink);
+  box-shadow:0 4px 20px rgba(0,0,0,.4); overflow-y:auto; max-height:80vh;
 }
-.close { float:right; cursor:pointer; font-weight:bold; color:var(--teal); font-size:18px; }
+.close {
+  float:right; cursor:pointer; color:var(--muted); font-size:1.3rem; font-weight:800;
+}
+pre {
+  background:#0f172a; padding:14px; border-radius:8px; color:#00ffaa; font-size:12px;
+  white-space:pre-wrap; max-height:65vh; overflow-y:auto;
+}
+button {
+  margin-top:10px; padding:8px 16px; background:var(--teal); border:none; color:white;
+  border-radius:6px; font-weight:600; cursor:pointer;
+}
 </style>
 </head>
 <body>
-<h1>Painel de Integrações</h1>
+  <h1>Painel Financeiro • Mercatto</h1>
 
-<div class="cards">
   <div class="card" onclick="abrirPopup()">
-    <h2>Varejo Fácil Mercatto</h2>
-    <p>Ver dados do dia anterior</p>
+    <h2>Varejo Fácil</h2>
+    <p>Mercatto</p>
   </div>
-</div>
 
-<div id="popup">
-  <div class="popup-content">
-    <span class="close" onclick="fecharPopup()">×</span>
-    <h2>Dados Varejo Fácil - Dia Anterior</h2>
-    <pre id="dadosJson">Carregando...</pre>
+  <div id="popup">
+    <div class="popup-content">
+      <span class="close" onclick="fecharPopup()">×</span>
+      <h2>Resumo do Dia Anterior</h2>
+      <pre id="saida">Carregando dados...</pre>
+      <button onclick="fecharPopup()">Fechar</button>
+    </div>
   </div>
-</div>
 
 <script>
-async function abrirPopup() {
-  document.getElementById('popup').style.display = 'flex';
-  const resp = await fetch('/api/coletarVarejoFacil');
-  const dados = await resp.json();
-  document.getElementById('dadosJson').textContent = JSON.stringify(dados, null, 2);
+async function abrirPopup(){
+  document.getElementById("popup").style.display="flex";
+  document.getElementById("saida").textContent="🔄 Buscando dados do dia anterior...";
+
+  try{
+    const hoje = new Date();
+    const ontem = new Date(hoje.getTime() - 24*60*60*1000);
+    const dataISO = ontem.toISOString().split("T")[0];
+
+    const resp = await fetch("/api/recebimentos",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        dataInicio:dataISO, dataFim:dataISO,
+        horaInicio:"00:00", horaFim:"23:59"
+      })
+    });
+
+    const json = await resp.json();
+    document.getElementById("saida").textContent = JSON.stringify(json,null,2);
+  }catch(e){
+    document.getElementById("saida").textContent="Erro ao buscar dados: "+e.message;
+  }
 }
-function fecharPopup() {
-  document.getElementById('popup').style.display = 'none';
+
+function fecharPopup(){
+  document.getElementById("popup").style.display="none";
 }
 </script>
 </body>
