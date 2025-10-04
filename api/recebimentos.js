@@ -1,54 +1,58 @@
-// api/recebimentos.js
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Método não permitido" });
-  }
-
-  const { dataInicial, dataFinal } = req.query;
-  if (!dataInicial || !dataFinal) {
-    return res.status(400).json({ error: "Informe dataInicial e dataFinal" });
-  }
-
   try {
-    // 1. Login para pegar o token
-    const loginResp = await fetch("https://mercatto.varejofacil.com/api/auth", {
+    const { dataIni, dataFim } = req.query;
+
+    // 1️⃣ Login automático
+    const loginResp = await fetch("https://mercatto.varejofacil.com/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: process.env.VAREJO_USERNAME,
-        password: process.env.VAREJO_PASSWORD
+        username: process.env.MERCATTO_USER,
+        password: process.env.MERCATTO_PASS
       })
     });
 
-    if (!loginResp.ok) {
-      const text = await loginResp.text();
-      return res.status(loginResp.status).json({ error: "Falha no login", detail: text });
-    }
+    const loginData = await loginResp.json();
+    const token = loginData.accessToken;
+    if (!token) throw new Error("Token inválido");
 
-    const { accessToken } = await loginResp.json();
-
-    // 2. Buscar recebimentos
-    const url = `https://mercatto.varejofacil.com/api/v1/pdv/recebimentos?dataInicial=${dataInicial}&dataFinal=${dataFinal}&start=0&count=1000`;
-
-   // 2. USAR ESSA URL E O FILTRO DE DATAS TEM QUE TER HORA, AJUSTA O INDEX
-    https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais?q=dataVenda=ge=2025-10-01T00:00:00;dataVenda=le=2025-10-03T23:59:59&start=0&count=100
+    // 2️⃣ Busca de recebimentos com filtro de data e hora
+    const url = `https://mercatto.varejofacil.com/v1/pdv/recebimentos?q=dataHoraFechamentoRecebimento=ge=${dataIni};dataHoraFechamentoRecebimento=le=${dataFim}&start=0&count=1000`;
 
     const resp = await fetch(url, {
       headers: {
-        "Authorization": accessToken,
-        "Accept": "application/json"
+        Authorization: token,
+        Accept: "application/json"
       }
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      return res.status(resp.status).json({ error: "Erro ao buscar recebimentos", detail: text });
-    }
+    if (!resp.ok) throw new Error("Erro ao consultar recebimentos");
+    const dados = await resp.json();
 
-    const data = await resp.json();
-    res.status(200).json(data);
+    // 3️⃣ Processamento
+    const finalizadoras = {
+      1:"dinheiro",2:"crédito",3:"débito",4:"pix",5:"consumo interno",12:"débito",
+      13:"pix",14:"dinheiro",15:"pix",16:"pix",17:"crédito",18:"débito",
+      19:"online",20:"boleto",21:"boleto",22:"boleto",23:"boleto",24:"boleto",
+      25:"boleto",26:"crediário",27:"consumo sócio",28:"boleto",29:"voucher",
+      30:"online",31:"online",32:"online",33:"voucher",34:"marketing",35:"voucher",36:"outros"
+    };
 
-  } catch (error) {
-    res.status(500).json({ error: "Erro interno na API de recebimentos", detail: error.message });
+    const resultado = { restaurante: {}, emporio: {} };
+
+    dados.items.forEach(item => {
+      const caixa = parseInt(item.numeroCaixa);
+      const destino = (caixa >= 1 && caixa <= 5) ? "emporio" : "restaurante";
+
+      item.finalizacoes.forEach(fin => {
+        const cat = finalizadoras[fin.finalizadoraId] || "outros";
+        if (!resultado[destino][cat]) resultado[destino][cat] = 0;
+        resultado[destino][cat] += fin.valor;
+      });
+    });
+
+    res.status(200).json(resultado);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
