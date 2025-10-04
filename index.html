@@ -1,69 +1,134 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Recebimentos Mercatto</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/4727/4727490.png">
   <style>
-    body{font-family:Arial, sans-serif;background:#f8fafc;margin:0;color:#1e293b}
-    header{background:#1e40af;color:#fff;text-align:center;padding:16px;font-size:1.4em;font-weight:bold}
-    main{max-width:800px;margin:30px auto;padding:20px;background:#fff;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.1)}
-    .filtros{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:20px}
-    .filtros input{padding:8px;border:1px solid #cbd5e1;border-radius:6px}
-    button{background:#2563eb;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer}
-    #overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.8);z-index:999;justify-content:center;align-items:center;font-size:1.5em;color:#2563eb;font-weight:bold}
-    .erro{text-align:center;color:red;margin-top:20px}
-    .resultado{margin-top:20px}
+    :root {
+      --bg:#f6f8fb; --card:#fff; --text:#0f172a; --muted:#64748b;
+      --brand:#1d4ed8; --ok:#16a34a; --error:#ef4444; --radius:14px;
+      --shadow:0 4px 16px rgba(0,0,0,0.1);
+    }
+    body {
+      margin:0; font-family:Inter,system-ui,Arial;
+      background:var(--bg); color:var(--text);
+    }
+    header {
+      background:var(--brand); color:white; padding:14px;
+      text-align:center; font-weight:600; font-size:1.2rem;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    header img { height:22px; }
+    main {
+      max-width:900px; margin:40px auto; background:var(--card);
+      padding:30px; border-radius:var(--radius); box-shadow:var(--shadow);
+      text-align:center;
+    }
+    .inputs { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px; }
+    input, button {
+      padding:10px 14px; border-radius:var(--radius); border:1px solid #d1d5db;
+      font-size:15px;
+    }
+    button {
+      background:var(--brand); color:white; border:none; cursor:pointer; font-weight:600;
+      transition:.2s;
+    }
+    button:hover { opacity:0.9; }
+    .msg { color:var(--error); margin-bottom:12px; font-weight:600; }
+    .cards {
+      display:grid; grid-template-columns:1fr 1fr; gap:20px; justify-items:center;
+    }
+    .card {
+      background:var(--card); border-radius:var(--radius);
+      box-shadow:var(--shadow); padding:30px; width:100%;
+      max-width:380px; text-align:center;
+    }
+    .valor { font-size:2rem; color:var(--ok); font-weight:700; margin-top:10px; }
   </style>
 </head>
 <body>
-  <header>📊 Recebimentos Mercatto</header>
+  <header>
+    <img src="https://cdn-icons-png.flaticon.com/512/4727/4727490.png" />
+    Recebimentos Mercatto
+  </header>
   <main>
-    <div class="filtros">
-      <input type="date" id="dataInicial">
-      <input type="time" id="horaInicial" value="08:00">
-      <input type="date" id="dataFinal">
-      <input type="time" id="horaFinal" value="23:59">
-      <button onclick="buscar()">Buscar</button>
+    <div class="inputs">
+      <div>
+        <label>Data Inicial:</label><br>
+        <input type="date" id="dataInicial" />
+      </div>
+      <div>
+        <label>Hora Inicial:</label><br>
+        <input type="time" id="horaInicial" value="08:00" />
+      </div>
+      <div>
+        <label>Data Final:</label><br>
+        <input type="date" id="dataFinal" />
+      </div>
+      <div>
+        <label>Hora Final:</label><br>
+        <input type="time" id="horaFinal" value="23:59" />
+      </div>
+      <div>
+        <button id="filtrar">Buscar</button>
+      </div>
     </div>
-    <div id="overlay">⏳ Processando...</div>
-    <div id="erro" class="erro"></div>
-    <div id="resultado" class="resultado"></div>
+    <div id="mensagem" class="msg"></div>
+    <div class="cards">
+      <div class="card">
+        <h3>CARNEIRO MERCATTO RESTAURANTE</h3>
+        <div id="restaurante" class="valor">R$ 0,00</div>
+      </div>
+      <div class="card">
+        <h3>CARNEIRO MERCATTO EMPÓRIO</h3>
+        <div id="emporio" class="valor">R$ 0,00</div>
+      </div>
+    </div>
   </main>
 
-  <script>
-    async function buscar(){
-      const dataInicial = document.getElementById("dataInicial").value;
-      const dataFinal = document.getElementById("dataFinal").value;
-      const horaInicial = document.getElementById("horaInicial").value;
-      const horaFinal = document.getElementById("horaFinal").value;
-      const overlay = document.getElementById("overlay");
-      const erro = document.getElementById("erro");
-      const resultado = document.getElementById("resultado");
+  <script type="module">
+    import { loginVarejo } from './api/login.js';
+    import { buscarRecebimentos } from './api/recebimentos.js';
 
-      overlay.style.display = "flex";
-      erro.textContent = ""; resultado.innerHTML = "";
+    document.getElementById('filtrar').addEventListener('click', async () => {
+      const dataInicial = document.getElementById('dataInicial').value;
+      const horaInicial = document.getElementById('horaInicial').value;
+      const dataFinal = document.getElementById('dataFinal').value;
+      const horaFinal = document.getElementById('horaFinal').value;
+      const msg = document.getElementById('mensagem');
+      msg.textContent = '';
 
-      try{
-        const res = await fetch(`/api/recebimentos?dataInicial=${dataInicial}&horaInicial=${horaInicial}&dataFinal=${dataFinal}&horaFinal=${horaFinal}`);
-        const data = await res.json();
-        if(!res.ok) throw new Error(data.error || "Erro na API");
-
-        let html = `<h3>Total de Cupons: ${data.total}</h3>`;
-        data.items.forEach(cupom=>{
-          html += `<div>💰 <b>${cupom.valor.toFixed(2)}</b> — Caixa ${cupom.numeroCaixa} — ${new Date(cupom.dataHoraFechamentoCupom).toLocaleString()}</div>`;
-        });
-        resultado.innerHTML = html;
-      }catch(e){
-        erro.textContent = e.message;
-      }finally{
-        overlay.style.display = "none";
+      if (!dataInicial || !dataFinal) {
+        msg.textContent = 'Informe as datas corretamente.';
+        return;
       }
-    }
 
-    const hoje = new Date().toISOString().split("T")[0];
-    document.getElementById("dataInicial").value = hoje;
-    document.getElementById("dataFinal").value = hoje;
+      msg.textContent = 'Carregando...';
+
+      try {
+        const token = await loginVarejo();
+        if (!token) throw new Error('Falha no login');
+
+        const dados = await buscarRecebimentos(token, dataInicial, horaInicial, dataFinal, horaFinal);
+
+        if (!dados || !dados.items) {
+          msg.textContent = 'Nenhum dado encontrado.';
+          return;
+        }
+
+        // exemplo: soma valores por lojaId
+        const totalRestaurante = dados.items.filter(i => i.lojaId === 1).reduce((acc, i) => acc + i.valor, 0);
+        const totalEmporio = dados.items.filter(i => i.lojaId === 2).reduce((acc, i) => acc + i.valor, 0);
+
+        document.getElementById('restaurante').textContent = totalRestaurante.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        document.getElementById('emporio').textContent = totalEmporio.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+        msg.textContent = '';
+      } catch (err) {
+        msg.textContent = 'Erro: ' + err.message;
+      }
+    });
   </script>
 </body>
 </html>
