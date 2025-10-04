@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       const data = await response.json();
 
       if (data.accessToken) {
-        // salva o token em memória/retorna
+        // Retorna token puro
         return res.status(200).json({ token: data.accessToken });
       } else {
         return res.status(401).json({ error: "Login falhou", data });
