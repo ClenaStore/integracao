@@ -30,6 +30,9 @@ export default async function handler(req, res) {
     // 2. Buscar recebimentos
     const url = `https://mercatto.varejofacil.com/api/v1/pdv/recebimentos?dataInicial=${dataInicial}&dataFinal=${dataFinal}&start=0&count=1000`;
 
+   // 2. USAR ESSA URL E O FILTRO DE DATAS TEM QUE TER HORA, AJUSTA O INDEX
+    https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais?q=dataVenda=ge=2025-10-01T00:00:00;dataVenda=le=2025-10-03T23:59:59&start=0&count=100
+
     const resp = await fetch(url, {
       headers: {
         "Authorization": accessToken,
