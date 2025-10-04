@@ -1,27 +1,29 @@
-export default async function handler(req, res) {
-  const { dataInicial, dataFinal } = req.query;
-  const token = req.headers["authorization"]; // token puro
+import axios from "axios";
 
-  if (!token) {
-    return res.status(401).json({ error: "Token não informado" });
-  }
+export default async function handler(req, res) {
+  if (req.method !== "GET") return res.status(405).json({ error: "Método não permitido" });
+
+  const { dataInicial, dataFinal } = req.query;
 
   try {
-    const response = await fetch(
-      `https://mercatto.varejofacil.com/api/v1/pdv/recebimentos?dataInicial=${dataInicial}&dataFinal=${dataFinal}&start=0&count=2000`,
-      {
-        method: "GET",
-        headers: {
-          "Authorization": token, // sem Bearer
-          "Accept": "application/json"
-        }
-      }
+    // Faz login automático
+    const login = await axios.post("https://mercatto.varejofacil.com/api/auth", {
+      username: process.env.API_USER,
+      password: process.env.API_PASS
+    }, {
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const token = login.data.accessToken;
+
+    // Busca os recebimentos com o token
+    const response = await axios.get(
+      `https://mercatto.varejofacil.com/api/v1/pdv/recebimentos?dataInicial=${dataInicial}&dataFinal=${dataFinal}&start=0&count=1000`,
+      { headers: { Authorization: token, Accept: "application/json" } }
     );
 
-    const data = await response.json();
-    res.status(200).json(data);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(200).json(response.data);
+  } catch (error) {
+    return res.status(500).json({ error: "Erro ao buscar recebimentos", details: error.message });
   }
 }
