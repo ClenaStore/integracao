@@ -7,64 +7,46 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#0b1220;--card:#111a2e;--ink:#e5f0ff;--muted:#a8b3c7;--line:#1e293b;
-    --teal:#06b6d4;--green:#16a34a;--radius:10px;
+    --bg:#0b1220;--card:#111a2e;--ink:#e5f0ff;--muted:#a8b3c7;--teal:#06b6d4;
   }
-  body {
+  body{
     margin:0;
-    font-family:'Inter',system-ui;
     background:var(--bg);
     color:var(--ink);
+    font-family:'Inter',system-ui;
     padding:20px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
   }
   h1{text-align:center;margin-bottom:20px;color:var(--teal);}
   .controls{
-    display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:20px;
+    text-align:center;margin-bottom:20px;
   }
   input,button{
-    padding:8px 10px;border-radius:6px;border:none;
-    font-size:14px;
+    padding:8px 10px;margin:4px;border-radius:6px;border:none;font-size:14px;
   }
   button{background:var(--teal);color:white;cursor:pointer;font-weight:600;}
-  .container{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
-    width:100%;
-    max-width:1400px;
+  #layout{
+    display:flex;
+    gap:40px;
+    align-items:flex-start;
   }
-  pre{
-    background:var(--card);
-    padding:16px;
-    border-radius:var(--radius);
+  #resumo{
+    width:35%;
+    font-size:14px;
+    white-space:pre;
+    line-height:1.5;
+  }
+  #saida{
+    flex:1;
+    background:#111a2e;
+    padding:20px;
+    border-radius:8px;
     overflow:auto;
     font-size:12px;
-    line-height:1.4;
     color:#00ffaa;
   }
-  .resumo{
-    background:var(--card);
-    padding:20px;
-    border-radius:var(--radius);
-    border:1px solid var(--line);
-    overflow:auto;
-    font-size:14px;
-  }
-  .resumo h3{
-    color:var(--teal);
-    margin-top:0;
-    margin-bottom:6px;
-  }
-  .resumo .caixa{
-    margin-bottom:20px;
-    padding-bottom:10px;
-    border-bottom:1px solid var(--line);
-  }
   @media(max-width:900px){
-    .container{grid-template-columns:1fr;}
+    #layout{flex-direction:column;}
+    #resumo{width:100%;}
   }
 </style>
 </head>
@@ -79,8 +61,8 @@
     <button onclick="consultar()">Consultar</button>
   </div>
 
-  <div class="container">
-    <div id="resumo" class="resumo">Aguardando consulta...</div>
+  <div id="layout">
+    <div id="resumo">Aguardando consulta...</div>
     <pre id="saida">Aguardando consulta...</pre>
   </div>
 
@@ -120,11 +102,10 @@ const grupos = {
   "outros": []
 };
 
-// Função auxiliar: normaliza texto e encontra grupo
 function encontrarGrupo(descricao){
-  const desc = descricao.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const desc = descricao.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   for(const [grupo, termos] of Object.entries(grupos)){
-    if(termos.some(t => desc.includes(t))) return grupo;
+    if(termos.some(t=>desc.includes(t))) return grupo;
   }
   return "outros";
 }
@@ -168,15 +149,15 @@ async function consultar(){
     });
 
     let html = '';
-    for(const [cx,gruposCx] of Object.entries(caixas)){
-      html += `<div class="caixa"><h3>Caixa ${cx}</h3><pre>`;
+    for(const [cx, gruposCx] of Object.entries(caixas)){
+      html += `Caixa ${cx}\n`;
       for(const [g,info] of Object.entries(gruposCx)){
         html += `├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: R$ ${info.total.toFixed(2)} (${info.count} vendas)\n`;
       }
-      html += `</pre></div>`;
+      html += '\n';
     }
 
-    resumo.innerHTML = html || 'Nenhum dado encontrado.';
+    resumo.textContent = html || 'Nenhum dado encontrado.';
   }catch(e){
     saida.textContent = 'Erro: '+e.message;
     resumo.textContent = 'Erro: '+e.message;
