@@ -3,79 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <title>Recebimentos • Mercatto</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; background: #f4f6fb; color: #1f2937; }
-    header { padding: 20px; text-align: center; font-size: 1.8em; font-weight: bold; }
-    .filtros { text-align: center; margin-bottom: 20px; }
-    .filtros input, .filtros button { padding: 8px; margin: 5px; border-radius: 6px; border: 1px solid #ccc; }
-    .filtros button { background: #2563eb; color: white; border: none; cursor: pointer; }
-    .cards { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin: 0 auto; max-width: 1200px; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); flex: 1; min-width: 320px; }
-    .linha { margin: 6px 0; font-size: 1rem; }
-    .linha span { font-weight: bold; }
-    .erro { text-align: center; color: red; font-weight: bold; margin-top: 10px; }
-    #overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.8); z-index:1000; justify-content:center; align-items:center; font-size:1.5rem; font-weight:bold; color:#2563eb; }
+    body {
+      margin: 0; font-family: 'Inter', sans-serif; background: #f7f9fc; color: #111827;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    h1 { margin: 24px 0; font-size: 28px; font-weight: 800; }
+    .filtros { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
+    .filtros input { padding: 8px 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px; }
+    button {
+      padding: 8px 16px; background: #2563eb; color: white; border: none;
+      border-radius: 6px; cursor: pointer; font-weight: 600;
+    }
+    button:hover { background: #1e40af; }
+    .erro { color: red; margin-top: 10px; font-weight: 600; }
+    .cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 24px; margin-top: 20px; }
+    .card {
+      background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border-radius: 12px;
+      padding: 20px; width: 420px; text-align: center;
+    }
   </style>
 </head>
 <body>
-  <header>Recebimentos</header>
+  <h1>Recebimentos</h1>
 
   <div class="filtros">
-    Data Inicial: <input type="date" id="dataInicial">
-    Hora Inicial: <input type="time" id="horaInicial" value="00:00">
-    Data Final: <input type="date" id="dataFinal">
-    Hora Final: <input type="time" id="horaFinal" value="23:59">
-    <button onclick="carregar()">Filtrar</button>
+    <label>Data Inicial:
+      <input type="date" id="dataInicial">
+    </label>
+    <label>Hora Inicial:
+      <input type="time" id="horaInicial" value="08:00">
+    </label>
+    <label>Data Final:
+      <input type="date" id="dataFinal">
+    </label>
+    <label>Hora Final:
+      <input type="time" id="horaFinal" value="16:00">
+    </label>
+    <button id="filtrar">Filtrar</button>
   </div>
 
-  <div id="overlay">⏳ Processando...</div>
   <div id="erro" class="erro"></div>
 
   <div class="cards">
-    <div class="card" id="restaurante">
-      <h3>CARNEIRO MERCATTO RESTAURANTE</h3>
-      <div id="restaurante-valores"></div>
-    </div>
-    <div class="card" id="emporio">
-      <h3>CARNEIRO MERCATTO EMPÓRIO</h3>
-      <div id="emporio-valores"></div>
-    </div>
+    <div class="card" id="restaurante">CARNEIRO MERCATTO RESTAURANTE</div>
+    <div class="card" id="emporio">CARNEIRO MERCATTO EMPÓRIO</div>
   </div>
 
-  <script>
-    async function carregar() {
-      document.getElementById("overlay").style.display = "flex";
-      document.getElementById("erro").textContent = "";
-      try {
-        const dataIni = document.getElementById("dataInicial").value;
-        const horaIni = document.getElementById("horaInicial").value;
-        const dataFim = document.getElementById("dataFinal").value;
-        const horaFim = document.getElementById("horaFinal").value;
+  <script type="module">
+    import { login } from './api/login.js';
+    import { buscarRecebimentos } from './api/recebimentos.js';
 
-        const iniFull = `${dataIni}T${horaIni}:00`;
-        const fimFull = `${dataFim}T${horaFim}:59`;
+    const btn = document.getElementById('filtrar');
+    const erro = document.getElementById('erro');
 
-        const resp = await fetch(`/api/recebimentos?dataInicial=${iniFull}&dataFinal=${fimFull}`);
-        if (!resp.ok) throw new Error("Erro ao buscar dados");
-        const dados = await resp.json();
-        render(dados);
-      } catch (err) {
-        document.getElementById("erro").textContent = err.message;
-      } finally {
-        document.getElementById("overlay").style.display = "none";
+    btn.addEventListener('click', async () => {
+      erro.textContent = '';
+      const dataInicial = document.getElementById('dataInicial').value;
+      const horaInicial = document.getElementById('horaInicial').value;
+      const dataFinal = document.getElementById('dataFinal').value;
+      const horaFinal = document.getElementById('horaFinal').value;
+
+      if (!dataInicial || !dataFinal) {
+        erro.textContent = 'Informe as datas inicial e final';
+        return;
       }
-    }
 
-    function render(dados) {
-      document.getElementById("restaurante-valores").innerHTML = JSON.stringify(dados.restaurante, null, 2);
-      document.getElementById("emporio-valores").innerHTML = JSON.stringify(dados.emporio, null, 2);
-    }
-
-    // preencher datas padrão = hoje
-    const hoje = new Date().toISOString().split("T")[0];
-    document.getElementById("dataInicial").value = hoje;
-    document.getElementById("dataFinal").value = hoje;
+      try {
+        const token = await login();
+        await buscarRecebimentos(token, dataInicial, horaInicial, dataFinal, horaFinal);
+      } catch (e) {
+        erro.textContent = 'Erro ao buscar dados';
+        console.error(e);
+      }
+    });
   </script>
 </body>
 </html>
