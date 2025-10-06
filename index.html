@@ -106,11 +106,11 @@ async function consultar(){
   saida.textContent  = "🔄 Buscando dados...";
 
   try{
-    // Login
+    // 🔐 Login
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // Busca
+    // 🔗 Busca cupons sem hora, apenas por dataVenda
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -126,45 +126,50 @@ async function consultar(){
     }
 
     let html = `🧾 Total de Cupons: ${vendas.length}\n\n`;
-    const totaisFinalizadoras = {}; // armazena somas por finalizadora
+    const totaisFinalizadoras = {}; // soma por finalizadora
 
     for(const v of vendas){
       const cx = v.numeroCaixa || "???";
-      const cancelado = (v.valorItensCancelados>0 || v.qtdItensCancelados>0);
-      const fins = Array.isArray(v.finalizacoes)?v.finalizacoes:[];
       const seq = v.sequencial || v.id || "—";
+      const fins = Array.isArray(v.finalizacoes)?v.finalizacoes:[];
+      const canceladoCupom = (v.valorItensCancelados>0 || v.qtdItensCancelados>0);
 
       fins.forEach(f=>{
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
         const nome = forma ? forma.descricao : `❌ Não catalogada`;
-        const val = valorFinalizacaoLiquido(f);
+
+        // 🔍 Verifica se essa finalização é de um item cancelado
+        const canceladoFinal = (f.cancelado === true || canceladoCupom);
+        const val = canceladoFinal ? 0 : valorFinalizacaoLiquido(f);
 
         // acumula valor por finalizadora
-        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0 };
-        if(!cancelado) totaisFinalizadoras[idf].total += val;
+        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0, count: 0 };
+        totaisFinalizadoras[idf].total += val;
+        totaisFinalizadoras[idf].count++;
 
         html += 
           `📄 Cupom: ${seq}\n`+
           `   Caixa: ${cx}\n`+
           `   Finalizadora ${idf} - ${nome}\n`+
           `   Valor: ${brl(val)}\n`+
-          `   Status: ${cancelado ? "❌ CANCELADO" : "✅ ATIVO"}\n\n`;
+          `   Status: ${canceladoFinal ? "❌ CANCELADO" : "✅ ATIVO"}\n\n`;
       });
     }
 
-    // adiciona totais por finalizadora no final
+    // =============================
+    // 💰 Totais por finalizadora
     html += "===============================\n";
     html += "💰 TOTAIS POR FINALIZADORA:\n";
     const ordenado = Object.entries(totaisFinalizadoras).sort((a,b)=>b[1].total - a[1].total);
     for(const [idf, info] of ordenado){
-      html += `   ${idf} - ${info.nome}: ${brl(info.total)}\n`;
+      html += `   ${idf} - ${info.nome}: ${brl(info.total)} (${info.count} cupons)\n`;
     }
 
     resumo.textContent = html;
 
   }catch(e){
-    resumo.textContent='Erro ao buscar dados.';
+    resumo.textContent='❌ Erro ao buscar dados.';
     saida.textContent='Erro: '+e.message;
   }
 }
