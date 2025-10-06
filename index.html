@@ -98,7 +98,6 @@ async function consultar(){
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // converter para formato esperado (YYYY-MM-DD)
     const dataIniFmt = new Date(dataInicio).toISOString().split('T')[0];
     const dataFimFmt = new Date(dataFim).toISOString().split('T')[0];
 
@@ -125,33 +124,39 @@ async function consultar(){
     });
 
     let totalGeral=0,totalEmporio=0,totalRestaurante=0;
-    filtradas.forEach(v=>{
-      const cx=parseInt(v.numeroCaixa||"0",10);
-      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
-      const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
-      totalGeral+=somaCupom;
-      if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
-      if(cx>5) totalRestaurante+=somaCupom;
-    });
-
-    document.getElementById('totalGeral').innerText=brl(totalGeral);
-    document.getElementById('totalEmporio').innerText=brl(totalEmporio);
-    document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
-
     const caixas={};
+    const naoCatalogadas={};
+
     filtradas.forEach(v=>{
       const cx=v.numeroCaixa||"000";
       if(!caixas[cx]) caixas[cx]={};
       (v.finalizacoes||[]).forEach(f=>{
         const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
-        const nome=forma?forma.descricao:"Desconhecida";
-        const grupo=encontrarGrupo(nome);
+        const nome=forma?forma.descricao:`FINALIZADORA ${f.finalizadoraId}`;
+        const grupo=forma?encontrarGrupo(nome):"não catalogada";
         const val=valorFinalizacaoLiquido(f);
+
+        if(!forma){
+          if(!naoCatalogadas[nome]) naoCatalogadas[nome]=0;
+          naoCatalogadas[nome]+=val;
+        }
+
         if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
         caixas[cx][grupo].total+=val;
         caixas[cx][grupo].count++;
       });
+
+      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
+      const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
+      totalGeral+=somaCupom;
+      const cxNum=parseInt(v.numeroCaixa||"0",10);
+      if(cxNum>=1&&cxNum<=5) totalEmporio+=somaCupom;
+      if(cxNum>5) totalRestaurante+=somaCupom;
     });
+
+    document.getElementById('totalGeral').innerText=brl(totalGeral);
+    document.getElementById('totalEmporio').innerText=brl(totalEmporio);
+    document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
 
     const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
     let html='';
@@ -164,8 +169,20 @@ async function consultar(){
       }
       html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
     }
+
+    // adiciona lista de finalizadoras não catalogadas
+    const desconhecidas = Object.entries(naoCatalogadas);
+    if(desconhecidas.length){
+      html += `⚠️ Finalizadoras não catalogadas:\n`;
+      desconhecidas.forEach(([nome,valor])=>{
+        html += `- ${nome}: ${brl(valor)}\n`;
+      });
+      html += '\n';
+    }
+
     resumo.textContent=html||'Nenhum dado no dia selecionado.';
     saida.textContent=JSON.stringify(raw,null,2);
+
   }catch(e){
     saida.textContent='Erro: '+e.message;
     resumo.textContent='Erro: '+e.message;
