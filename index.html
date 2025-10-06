@@ -14,35 +14,14 @@
     --red:#ef4444;
     --green:#16a34a;
   }
-  body{
-    margin:0;background:var(--bg);color:var(--ink);
-    font-family:'Inter',system-ui;padding:20px;
-  }
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui;padding:20px;}
   h1{text-align:center;margin-bottom:20px;color:var(--teal);}
   .controls{text-align:center;margin-bottom:20px;}
-  input,button{
-    padding:8px 10px;margin:4px;border-radius:6px;
-    border:none;font-size:14px;
-  }
+  input,button{padding:8px 10px;margin:4px;border-radius:6px;border:none;font-size:14px;}
   button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
-  #layout{
-    display:flex;gap:40px;align-items:flex-start;justify-content:center;
-  }
-  #resumo{
-    width:45%;white-space:pre-wrap;line-height:1.5;font-size:14px;
-    background:#101827;padding:15px;border-radius:10px;
-    overflow:auto;max-height:80vh;
-  }
-  #saida{
-    flex:1;background:#111a2e;padding:20px;border-radius:8px;
-    overflow:auto;font-size:12px;color:#00ffaa;
-    max-height:80vh;
-  }
-  .ok{color:var(--green);}
-  .erro{color:var(--red);}
-  .cancelado{color:var(--red);}
-  .ativo{color:var(--green);}
-  .linha{border-bottom:1px solid #222;padding:5px 0;margin-bottom:4px;}
+  #layout{display:flex;gap:40px;align-items:flex-start;justify-content:center;}
+  #resumo{width:45%;white-space:pre-wrap;line-height:1.5;font-size:14px;background:#101827;padding:15px;border-radius:10px;overflow:auto;max-height:80vh;}
+  #saida{flex:1;background:#111a2e;padding:20px;border-radius:8px;overflow:auto;font-size:12px;color:#00ffaa;max-height:80vh;}
   @media(max-width:900px){#layout{flex-direction:column}#resumo{width:100%}}
 </style>
 </head>
@@ -127,6 +106,7 @@ async function consultar(){
 
     let html = `🧾 Total de Cupons: ${vendas.length}\n\n`;
     const totaisFinalizadoras = {};
+    let totalGeral = 0;
 
     for(const v of vendas){
       const cx = v.numeroCaixa || "???";
@@ -140,11 +120,11 @@ async function consultar(){
         const nome = forma ? forma.descricao : `❌ Não catalogada`;
         const val = valorFinalizacaoLiquido(f);
 
-        // 🔢 Acumula valor (mesmo se cancelado)
-        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0, count: 0, cancelado: 0 };
+        // soma geral e por finalizadora
+        totalGeral += val;
+        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0, count: 0 };
         totaisFinalizadoras[idf].total += val;
         totaisFinalizadoras[idf].count++;
-        if(canceladoCupom) totaisFinalizadoras[idf].cancelado += val;
 
         html += 
           `📄 Cupom: ${seq}\n`+
@@ -156,13 +136,16 @@ async function consultar(){
     }
 
     // =============================
-    // 💰 Totais por finalizadora
+    // 💰 Totais por finalizadora + total geral
     html += "===============================\n";
     html += "💰 TOTAIS POR FINALIZADORA (TODOS OS CUPONS):\n";
     const ordenado = Object.entries(totaisFinalizadoras).sort((a,b)=>b[1].total - a[1].total);
     for(const [idf, info] of ordenado){
       html += `   ${idf} - ${info.nome}: ${brl(info.total)} (${info.count} cupons)\n`;
     }
+
+    html += "\n===============================\n";
+    html += `💵 TOTAL GERAL DO PERÍODO: ${brl(totalGeral)}\n`;
 
     resumo.textContent = html;
 
