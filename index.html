@@ -125,51 +125,38 @@ async function consultar(){
     const totais = {};
     let totalGeral = 0;
 
-    for(const v of vendas){
+    for (const v of vendas) {
       if (v.cancelada) continue;
 
       const caixa = v.numeroCaixa || "—";
       const seq   = v.sequencial || v.id || "—";
+      const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
+      if (fins.length === 0) continue;
 
-      // 🧾 Cálculo real do valor recebido (valor + acréscimo - descontos - trocos)
-      const valorBruto = Number(v.valor || 0);
-      const acrescimo  = Number(v.acrescimo || 0);
-      const desconto   = Number(v.desconto || 0);
-      const troco      = Number(v.troco || 0);
-      const trocoDoa   = Number(v.trocoDoacao || 0);
-      const descMoeda  = Number(v.descontoMoeda || 0);
+      const acrescimo = Number(v.acrescimo || 0);
+      const desconto  = Number(v.desconto || 0);
+      const troco     = Number(v.troco || 0);
+      const trocoDoa  = Number(v.trocoDoacao || 0);
+      const descMoeda = Number(v.descontoMoeda || 0);
 
-      const valorLiquido = valorBruto + acrescimo - desconto - troco - trocoDoa - descMoeda;
-
-      const fins = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
-      if(fins.length===0){
-        // Cupom sem finalizadora — contabiliza como "Não Catalogada"
-        if(!totais["?"]) totais["?"] = {nome:"❌ Sem finalizadora", total:0};
-        totais["?"].total += valorLiquido;
-        totalGeral += valorLiquido;
-        tabela += `<tr><td>${caixa}</td><td>❌ Sem finalizadora</td><td>${brl(valorLiquido)}</td><td>${seq}</td></tr>`;
-        continue;
-      }
-
-      // Distribui o valor líquido entre as finalizadoras
-      fins.forEach(f=>{
+      // Distribui ajustes proporcionalmente entre as finalizadoras
+      fins.forEach(f => {
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
-        const forma = formasPagamento.find(fp=>fp.id==idf);
-        const nome = forma ? forma.descricao : "❌ Não catalogada";
+        const forma = formasPagamento.find(fp => fp.id == idf);
+        const nome  = forma ? forma.descricao : "❌ Não catalogada";
 
-        const valorFinal = Number(f.valor || 0);
-
-        // Se o cupom tiver apenas 1 finalizadora, usa o valor líquido ajustado
-        const valorUsado = fins.length === 1 ? valorLiquido : valorFinal;
+        const valorBase = Number(f.valor || 0);
+        const ajuste = (acrescimo - desconto - troco - trocoDoa - descMoeda) / fins.length;
+        const valorFinal = valorBase + ajuste;
 
         if(!totais[idf]) totais[idf] = { nome, total: 0 };
-        totais[idf].total += valorUsado;
-        totalGeral += valorUsado;
+        totais[idf].total += valorFinal;
+        totalGeral += valorFinal;
 
         tabela += `<tr>
           <td>${caixa}</td>
           <td>${idf} - ${nome}</td>
-          <td>${brl(valorUsado)}</td>
+          <td>${brl(valorFinal)}</td>
           <td>${seq}</td>
         </tr>`;
       });
