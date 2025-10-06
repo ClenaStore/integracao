@@ -27,9 +27,9 @@
 
   <div class="controls">
     <input type="date" id="dataInicio">
-    <input type="time" id="horaInicio" value="00:00">
+    <input type="time" id="horaInicio" value="00:00" disabled>
     <input type="date" id="dataFim">
-    <input type="time" id="horaFim" value="23:59">
+    <input type="time" id="horaFim" value="23:59" disabled>
     <button onclick="consultar()">Consultar</button>
   </div>
 
@@ -48,22 +48,14 @@
 const formasPagamento=[{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"12","descricao":"PGTO ONLINE DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"34","descricao":"MARKETING"},{"id":"28","descricao":"BOLETO DELICIA INDUS"},{"id":"29","descricao":"VOUCHER"},{"id":"10","descricao":"BOLETO"},{"id":"30","descricao":"PGT ONLINE DELIVERY"},{"id":"14","descricao":"PGTO ONLINE DINHEIRO"},{"id":"13","descricao":"PGTO ONLINE PIX"},{"id":"11","descricao":"PGTO ONLINE CREDITO"},{"id":"4","descricao":"PIX CNPJ"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"33","descricao":"VOUCHER POS"},{"id":"1","descricao":"DINHEIRO"},{"id":"35","descricao":"VALE MERCATTO"},{"id":"36","descricao":"PREJUIZO"},{"id":"16","descricao":"PIX TEF"},{"id":"31","descricao":"PGT ONLINE IFOOD"},{"id":"20","descricao":"BOLETO FAMILY PRODUT"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"22","descricao":"BOLETO DELICIA PRODU"},{"id":"24","descricao":"BOLETO ALL TIME CHOP"},{"id":"21","descricao":"BOLETO FOODS TIME"},{"id":"23","descricao":"BOLETO MEOS GOURMET"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"}];
 
 const grupos={
-  "crédito":["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
-  "débito":["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
-  "pix":["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
-  "online":["pagamento online","pagamentos online","refeicao","cart alimentacao"],
-  "consumo interno":["funcionario","convenio empresa","consumo funcionarios","consumo musicos"],
-  "boleto":["boleto"],
-  "crediário":["crediario","crediario clientes"],
-  "voucher":["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa"],
+  "crédito":["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery"],
+  "débito":["debito","pgto online debito","cartao debito","totem debito","debito pos"],
+  "pix":["pix","pgto online pix","pix tef","pix cnpj","pix qrcode pos"],
   "dinheiro":["dinheiro","pgto online dinheiro"],
+  "boleto":["boleto"],
+  "voucher":["voucher","cartao voucher","voucher pos"],
   "bonificação":["bonificacao"],
-  "catálogo delivery":["catalogo delivery","catálogo delivery"],
-  "consumo sócio":["socio","consumo sócio","consumo socio"],
   "marketing":["marketing"],
-  "transferência bancária":["transferencia bancar","transferencia bancaria"],
-  "erros garçom":["erros garcons"],
-  "sem faturamento":["sem faturamento"],
   "outros":[]
 };
 
@@ -87,70 +79,83 @@ function toDateLocal(v){
 
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value;
-  const horaInicio = document.getElementById('horaInicio').value;
-  const horaFim    = document.getElementById('horaFim').value;
+  const dataFim    = document.getElementById('dataFim').value || dataInicio;
   const saida  = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
+
+  if(!dataInicio){alert("Selecione a data.");return;}
 
   saida.textContent  = "🔄 Buscando dados...";
   resumo.textContent = "🔄 Processando...";
 
   try{
-    // 1) Login
+    // Login
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // 2) Busca de dados
+    // Converte formato corretamente
+    const dataIniFmt = new Date(dataInicio).toISOString().split('T')[0];
+    const dataFimFmt = new Date(dataFim).toISOString().split('T')[0];
+
+    // Busca de dados
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim,horaInicio,horaFim})
+      body:JSON.stringify({ token:accessToken, dataInicio:dataIniFmt, dataFim:dataFimFmt })
     });
     const raw = await resp.json();
-    saida.textContent = JSON.stringify(raw,null,2);
+
+    if(raw.error){
+      resumo.textContent = "Erro ao buscar dados.";
+      saida.textContent = JSON.stringify(raw, null, 2);
+      return;
+    }
 
     const vendas = raw.items || [];
-
-    // 3) Filtro por data/hora local
-    const start = new Date(`${dataInicio}T${horaInicio}:00`);
-    const end   = new Date(`${dataFim}T${horaFim}:59`);
+    const start = new Date(`${dataIniFmt}T00:00:00`);
+    const end   = new Date(`${dataFimFmt}T23:59:59`);
     const filtradas = vendas.filter(v=>{
       const d = toDateLocal(v);
       return d >= start && d <= end;
     });
 
-    // 4) Totais gerais
     let totalGeral=0,totalEmporio=0,totalRestaurante=0;
+    const caixas={};
+    const naoCatalogadas={};
+
     filtradas.forEach(v=>{
-      const cx=parseInt(v.numeroCaixa||"0",10);
+      const cx=v.numeroCaixa||"000";
+      if(!caixas[cx]) caixas[cx]={};
+
+      (v.finalizacoes||[]).forEach(f=>{
+        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
+        const nome=forma?forma.descricao:`FINALIZADORA ${f.finalizadoraId}`;
+        const grupo=forma?encontrarGrupo(nome):"não catalogada";
+        const val=valorFinalizacaoLiquido(f);
+
+        if(!forma){
+          if(!naoCatalogadas[nome]) naoCatalogadas[nome]=0;
+          naoCatalogadas[nome]+=val;
+        }
+
+        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
+        caixas[cx][grupo].total+=val;
+        caixas[cx][grupo].count++;
+      });
+
       const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
       const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
       totalGeral+=somaCupom;
-      if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
-      if(cx>5) totalRestaurante+=somaCupom;
+      const cxNum=parseInt(v.numeroCaixa||"0",10);
+      if(cxNum>=1&&cxNum<=5) totalEmporio+=somaCupom;
+      if(cxNum>5) totalRestaurante+=somaCupom;
     });
 
     document.getElementById('totalGeral').innerText=brl(totalGeral);
     document.getElementById('totalEmporio').innerText=brl(totalEmporio);
     document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
 
-    // 5) Resumo por caixa
-    const caixas={};
-    filtradas.forEach(v=>{
-      const cx=v.numeroCaixa||"000";
-      if(!caixas[cx]) caixas[cx]={};
-      (v.finalizacoes||[]).forEach(f=>{
-        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
-        const nome=forma?forma.descricao:"Desconhecida";
-        const grupo=encontrarGrupo(nome);
-        const val=valorFinalizacaoLiquido(f);
-        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
-        caixas[cx][grupo].total+=val;
-        caixas[cx][grupo].count++;
-      });
-    });
-
+    // Monta resumo
     const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
     let html='';
     for(const cx of caixasOrdenadas){
@@ -160,13 +165,25 @@ async function consultar(){
         html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
         somaCaixa+=info.total;
       }
-      // 💰 soma total do caixa
       html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
     }
-    resumo.textContent=html||'Nenhum dado no recorte selecionado.';
+
+    // Finalizadoras não catalogadas
+    const desconhecidas = Object.entries(naoCatalogadas);
+    if(desconhecidas.length){
+      html += `⚠️ Finalizadoras não catalogadas:\n`;
+      desconhecidas.forEach(([nome,valor])=>{
+        html += `- ${nome}: ${brl(valor)}\n`;
+      });
+      html += '\n';
+    }
+
+    resumo.textContent = html || 'Nenhum dado no dia selecionado.';
+    saida.textContent  = JSON.stringify(raw,null,2);
+
   }catch(e){
-    saida.textContent='Erro: '+e.message;
-    resumo.textContent='Erro: '+e.message;
+    resumo.textContent = 'Erro: '+e.message;
+    saida.textContent  = 'Erro: '+e.message;
   }
 }
 </script>
