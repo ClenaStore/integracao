@@ -89,6 +89,8 @@ async function consultar(){
   const saida  = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
 
+  if(!dataInicio){alert("Selecione a data.");return;}
+
   saida.textContent  = "🔄 Buscando dados...";
   resumo.textContent = "🔄 Processando...";
 
@@ -96,19 +98,27 @@ async function consultar(){
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
+    // converter para formato esperado (YYYY-MM-DD)
+    const dataIniFmt = new Date(dataInicio).toISOString().split('T')[0];
+    const dataFimFmt = new Date(dataFim).toISOString().split('T')[0];
+
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim})
+      body:JSON.stringify({
+        token:accessToken,
+        dataInicio: dataIniFmt,
+        dataFim: dataFimFmt
+      })
     });
+
     const raw = await resp.json();
-    saida.textContent = JSON.stringify(raw,null,2);
+    if(raw.error){saida.textContent=JSON.stringify(raw,null,2);resumo.textContent="Erro ao buscar dados.";return;}
 
     const vendas = raw.items || [];
 
-    // filtro automático para o dia inteiro
-    const start = new Date(`${dataInicio}T00:00:00`);
-    const end   = new Date(`${dataFim}T23:59:59`);
+    const start = new Date(`${dataIniFmt}T00:00:00`);
+    const end   = new Date(`${dataFimFmt}T23:59:59`);
     const filtradas = vendas.filter(v=>{
       const d = toDateLocal(v);
       return d >= start && d <= end;
@@ -155,6 +165,7 @@ async function consultar(){
       html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
     }
     resumo.textContent=html||'Nenhum dado no dia selecionado.';
+    saida.textContent=JSON.stringify(raw,null,2);
   }catch(e){
     saida.textContent='Erro: '+e.message;
     resumo.textContent='Erro: '+e.message;
