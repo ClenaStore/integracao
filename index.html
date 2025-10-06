@@ -98,11 +98,11 @@ async function consultar(){
   saida.textContent  = "🔄 Buscando dados...";
 
   try{
-    // 🔐 Login
+    // Login
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // 🔗 Busca cupons
+    // Busca de cupons
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -132,7 +132,7 @@ async function consultar(){
       const seq   = v.sequencial || v.id || "—";
       const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
 
-      // valor real do cupom (nível superior)
+      // Soma do valor líquido real do cupom
       const valorCupom = 
         (Number(v.valor) || 0) +
         (Number(v.acrescimo) || 0) +
@@ -142,16 +142,18 @@ async function consultar(){
 
       totalGeral += valorCupom;
 
-      // Finalizadoras detalhadas
+      // Percorre cada finalizadora do cupom
       fins.forEach(f=>{
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
         const nome  = forma ? forma.descricao : "❌ Não catalogada";
 
-        // valor líquido por finalizadora (regras PDV)
+        // Cálculo completo segundo regra do PDV
         const valor = 
           (Number(f.valor) || 0) +
-          (Number(f.jurosPlano) || 0) -
+          (Number(f.jurosPlano) || 0) +
+          (Number(v.acrescimo) || 0) +
+          (Number(v.valorServico) || 0) -
           (Number(f.troco) || 0) -
           (Number(f.trocoDoacao) || 0) -
           (Number(f.descontoMoeda) || 0);
