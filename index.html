@@ -27,9 +27,7 @@
 
   <div class="controls">
     <input type="date" id="dataInicio">
-    <input type="time" id="horaInicio" value="00:00">
     <input type="date" id="dataFim">
-    <input type="time" id="horaFim" value="23:59">
     <button onclick="consultar()">Consultar</button>
   </div>
 
@@ -87,9 +85,7 @@ function toDateLocal(v){
 
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value;
-  const horaInicio = document.getElementById('horaInicio').value;
-  const horaFim    = document.getElementById('horaFim').value;
+  const dataFim    = document.getElementById('dataFim').value || dataInicio;
   const saida  = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
 
@@ -97,30 +93,27 @@ async function consultar(){
   resumo.textContent = "🔄 Processando...";
 
   try{
-    // 1) Login
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // 2) Busca de dados
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim,horaInicio,horaFim})
+      body:JSON.stringify({token:accessToken,dataInicio,dataFim})
     });
     const raw = await resp.json();
     saida.textContent = JSON.stringify(raw,null,2);
 
     const vendas = raw.items || [];
 
-    // 3) Filtro por data/hora local
-    const start = new Date(`${dataInicio}T${horaInicio}:00`);
-    const end   = new Date(`${dataFim}T${horaFim}:59`);
+    // filtro automático para o dia inteiro
+    const start = new Date(`${dataInicio}T00:00:00`);
+    const end   = new Date(`${dataFim}T23:59:59`);
     const filtradas = vendas.filter(v=>{
       const d = toDateLocal(v);
       return d >= start && d <= end;
     });
 
-    // 4) Totais gerais
     let totalGeral=0,totalEmporio=0,totalRestaurante=0;
     filtradas.forEach(v=>{
       const cx=parseInt(v.numeroCaixa||"0",10);
@@ -135,7 +128,6 @@ async function consultar(){
     document.getElementById('totalEmporio').innerText=brl(totalEmporio);
     document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
 
-    // 5) Resumo por caixa
     const caixas={};
     filtradas.forEach(v=>{
       const cx=v.numeroCaixa||"000";
@@ -160,10 +152,9 @@ async function consultar(){
         html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
         somaCaixa+=info.total;
       }
-      // 💰 soma total do caixa
       html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
     }
-    resumo.textContent=html||'Nenhum dado no recorte selecionado.';
+    resumo.textContent=html||'Nenhum dado no dia selecionado.';
   }catch(e){
     saida.textContent='Erro: '+e.message;
     resumo.textContent='Erro: '+e.message;
