@@ -27,7 +27,9 @@
 
   <div class="controls">
     <input type="date" id="dataInicio">
+    <input type="time" id="horaInicio" value="00:00">
     <input type="date" id="dataFim">
+    <input type="time" id="horaFim" value="23:59">
     <button onclick="consultar()">Consultar</button>
   </div>
 
@@ -85,78 +87,69 @@ function toDateLocal(v){
 
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value || dataInicio;
+  const dataFim    = document.getElementById('dataFim').value;
+  const horaInicio = document.getElementById('horaInicio').value;
+  const horaFim    = document.getElementById('horaFim').value;
   const saida  = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
-
-  if(!dataInicio){alert("Selecione a data.");return;}
 
   saida.textContent  = "🔄 Buscando dados...";
   resumo.textContent = "🔄 Processando...";
 
   try{
+    // 1) Login
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    const dataIniFmt = new Date(dataInicio).toISOString().split('T')[0];
-    const dataFimFmt = new Date(dataFim).toISOString().split('T')[0];
-
+    // 2) Busca de dados
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        token:accessToken,
-        dataInicio: dataIniFmt,
-        dataFim: dataFimFmt
-      })
+      body:JSON.stringify({token:accessToken,dataInicio,dataFim,horaInicio,horaFim})
     });
-
     const raw = await resp.json();
-    if(raw.error){saida.textContent=JSON.stringify(raw,null,2);resumo.textContent="Erro ao buscar dados.";return;}
+    saida.textContent = JSON.stringify(raw,null,2);
 
     const vendas = raw.items || [];
 
-    const start = new Date(`${dataIniFmt}T00:00:00`);
-    const end   = new Date(`${dataFimFmt}T23:59:59`);
+    // 3) Filtro por data/hora local
+    const start = new Date(`${dataInicio}T${horaInicio}:00`);
+    const end   = new Date(`${dataFim}T${horaFim}:59`);
     const filtradas = vendas.filter(v=>{
       const d = toDateLocal(v);
       return d >= start && d <= end;
     });
 
+    // 4) Totais gerais
     let totalGeral=0,totalEmporio=0,totalRestaurante=0;
-    const caixas={};
-    const naoCatalogadas={};
-
     filtradas.forEach(v=>{
-      const cx=v.numeroCaixa||"000";
-      if(!caixas[cx]) caixas[cx]={};
-      (v.finalizacoes||[]).forEach(f=>{
-        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
-        const nome=forma?forma.descricao:`FINALIZADORA ${f.finalizadoraId}`;
-        const grupo=forma?encontrarGrupo(nome):"não catalogada";
-        const val=valorFinalizacaoLiquido(f);
-
-        if(!forma){
-          if(!naoCatalogadas[nome]) naoCatalogadas[nome]=0;
-          naoCatalogadas[nome]+=val;
-        }
-
-        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
-        caixas[cx][grupo].total+=val;
-        caixas[cx][grupo].count++;
-      });
-
+      const cx=parseInt(v.numeroCaixa||"0",10);
       const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
       const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
       totalGeral+=somaCupom;
-      const cxNum=parseInt(v.numeroCaixa||"0",10);
-      if(cxNum>=1&&cxNum<=5) totalEmporio+=somaCupom;
-      if(cxNum>5) totalRestaurante+=somaCupom;
+      if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
+      if(cx>5) totalRestaurante+=somaCupom;
     });
 
     document.getElementById('totalGeral').innerText=brl(totalGeral);
     document.getElementById('totalEmporio').innerText=brl(totalEmporio);
     document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
+
+    // 5) Resumo por caixa
+    const caixas={};
+    filtradas.forEach(v=>{
+      const cx=v.numeroCaixa||"000";
+      if(!caixas[cx]) caixas[cx]={};
+      (v.finalizacoes||[]).forEach(f=>{
+        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
+        const nome=forma?forma.descricao:"Desconhecida";
+        const grupo=encontrarGrupo(nome);
+        const val=valorFinalizacaoLiquido(f);
+        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
+        caixas[cx][grupo].total+=val;
+        caixas[cx][grupo].count++;
+      });
+    });
 
     const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
     let html='';
@@ -167,22 +160,10 @@ async function consultar(){
         html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
         somaCaixa+=info.total;
       }
+      // 💰 soma total do caixa
       html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
     }
-
-    // adiciona lista de finalizadoras não catalogadas
-    const desconhecidas = Object.entries(naoCatalogadas);
-    if(desconhecidas.length){
-      html += `⚠️ Finalizadoras não catalogadas:\n`;
-      desconhecidas.forEach(([nome,valor])=>{
-        html += `- ${nome}: ${brl(valor)}\n`;
-      });
-      html += '\n';
-    }
-
-    resumo.textContent=html||'Nenhum dado no dia selecionado.';
-    saida.textContent=JSON.stringify(raw,null,2);
-
+    resumo.textContent=html||'Nenhum dado no recorte selecionado.';
   }catch(e){
     saida.textContent='Erro: '+e.message;
     resumo.textContent='Erro: '+e.message;
