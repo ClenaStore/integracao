@@ -128,38 +128,22 @@ async function consultar(){
     let totalGeral = 0;
 
     for(const v of vendas){
+      if (v.cancelada) continue; // ignora cupons cancelados
       const caixa = v.numeroCaixa || "—";
-      const seq   = v.sequencial || v.id || "—";
-      const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
+      const seq = v.sequencial || v.id || "—";
+      const fins = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
 
-      // Soma do valor líquido real do cupom
-      const valorCupom = 
-        (Number(v.valor) || 0) +
-        (Number(v.acrescimo) || 0) +
-        (Number(v.valorServico) || 0) -
-        (Number(v.desconto) || 0) -
-        (Number(v.valorItensCancelados) || 0);
-
-      totalGeral += valorCupom;
-
-      // Percorre cada finalizadora do cupom
       fins.forEach(f=>{
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
         const nome  = forma ? forma.descricao : "❌ Não catalogada";
 
-        // Cálculo completo segundo regra do PDV
-        const valor = 
-          (Number(f.valor) || 0) +
-          (Number(f.jurosPlano) || 0) +
-          (Number(v.acrescimo) || 0) +
-          (Number(v.valorServico) || 0) -
-          (Number(f.troco) || 0) -
-          (Number(f.trocoDoacao) || 0) -
-          (Number(f.descontoMoeda) || 0);
+        // valor real conforme PDV (somente o campo valor da finalizadora)
+        const valor = Number(f.valor || 0);
 
         if(!totais[idf]) totais[idf] = { nome, total: 0 };
         totais[idf].total += valor;
+        totalGeral += valor;
 
         tabela += `<tr>
           <td>${caixa}</td>
