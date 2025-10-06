@@ -26,8 +26,10 @@
   #layout{display:flex;gap:40px;align-items:flex-start}
   #resumo{width:40%;white-space:pre;line-height:1.5;font-size:14px}
   #saida{flex:1;background:#111a2e;padding:20px;border-radius:8px;overflow:auto;font-size:12px;color:#00ffaa}
-  #erros{margin-top:20px;padding:10px;background:#1a1a2f;border-radius:8px;color:var(--red);font-size:13px;white-space:pre-line;}
-  #finalizadoras{margin-top:20px;padding:10px;background:#111a2e;border-radius:8px;color:var(--ink);font-size:14px;}
+  #erros,#cancelados,#finalizadoras{margin-top:20px;padding:10px;border-radius:8px;}
+  #erros{background:#1a1a2f;color:var(--red);font-size:13px;white-space:pre-line;}
+  #cancelados{background:#1a1a2f;color:var(--ink);font-size:13px;white-space:pre-line;}
+  #finalizadoras{background:#111a2e;color:var(--ink);font-size:14px;}
   #finalizadoras span{display:block;margin-bottom:4px;}
   .ok{color:var(--green);}
   .erro{color:var(--red);}
@@ -56,11 +58,12 @@
     <pre id="saida">Aguardando consulta...</pre>
   </div>
 
+  <div id="cancelados"></div>
   <div id="erros"></div>
   <div id="finalizadoras"></div>
 
 <script>
-const formasPagamento=[{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"12","descricao":"PGTO ONLINE DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"34","descricao":"MARKETING"},{"id":"28","descricao":"BOLETO DELICIA INDUS"},{"id":"29","descricao":"VOUCHER"},{"id":"10","descricao":"BOLETO"},{"id":"30","descricao":"PGT ONLINE DELIVERY"},{"id":"14","descricao":"PGTO ONLINE DINHEIRO"},{"id":"13","descricao":"PGTO ONLINE PIX"},{"id":"11","descricao":"PGTO ONLINE CREDITO"},{"id":"4","descricao":"PIX CNPJ"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"33","descricao":"VOUCHER POS"},{"id":"1","descricao":"DINHEIRO"},{"id":"35","descricao":"VALE MERCATTO"},{"id":"36","descricao":"PREJUIZO"},{"id":"16","descricao":"PIX TEF"},{"id":"31","descricao":"PGT ONLINE IFOOD"},{"id":"20","descricao":"BOLETO FAMILY PRODUT"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"22","descricao":"BOLETO DELICIA PRODU"},{"id":"24","descricao":"BOLETO ALL TIME CHOP"},{"id":"21","descricao":"BOLETO FOODS TIME"},{"id":"23","descricao":"BOLETO MEOS GOURMET"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"}];
+const formasPagamento=[{"id":"1","descricao":"DINHEIRO"},{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"4","descricao":"PIX CNPJ"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"16","descricao":"PIX TEF"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"},{"id":"29","descricao":"VOUCHER"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"34","descricao":"MARKETING"},{"id":"36","descricao":"PREJUIZO"},{"id":"999","descricao":"SEM FATURAMENTO"}];
 
 const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
@@ -92,11 +95,13 @@ async function consultar(){
   const resumo = document.getElementById('resumo');
   const errosBox = document.getElementById('erros');
   const finalizadorasBox = document.getElementById('finalizadoras');
+  const canceladosBox = document.getElementById('cancelados');
 
   saida.textContent  = "🔄 Buscando dados...";
   resumo.textContent = "🔄 Processando...";
   errosBox.textContent = "";
   finalizadorasBox.textContent = "";
+  canceladosBox.textContent = "";
 
   try{
     // Login
@@ -114,40 +119,35 @@ async function consultar(){
 
     const vendas = raw.items || [];
 
-    const start = new Date(`${dataInicio}T${horaInicio}:00`);
-    const end   = new Date(`${dataFim}T${horaFim}:59`);
-    const filtradas = [];
+    const usados = {};
     const erros = [];
-    const usados = {}; // registrar finalizadoras encontradas
+    const caixas = {};
+    const cancelamentos = [];
+
+    let totalGeral=0,totalEmporio=0,totalRestaurante=0,totalCancelado=0;
 
     for(const v of vendas){
-      const d = obterDataCupom(v);
-      if(!d || isNaN(d.getTime())){
-        erros.push(`ID ${v.id} - Data inválida (${v.data||"?"} ${v.hora||"?"})`);
-        continue;
-      }
-      if(d >= start && d <= end) filtradas.push(v);
-    }
-
-    let totalGeral=0,totalEmporio=0,totalRestaurante=0,cancelados=0;
-    const caixas={};
-
-    for(const v of filtradas){
       const cx=parseInt(v.numeroCaixa||"0",10);
-      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
       const cancelado = (v.valorItensCancelados>0 || v.qtdItensCancelados>0);
-      if(cancelado) cancelados++;
+      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
       let somaCupom=0;
+
       fins.forEach(f=>{
-        const val=cancelado?0:valorFinalizacaoLiquido(f);
-        somaCupom+=val;
-        const idf=f.finalizadoraId||"?";
+        const idf=(f.finalizadoraId||"?").replace(/^0+/,"");
         const forma=formasPagamento.find(fp=>fp.id==idf);
         const nome=forma?forma.descricao:null;
         usados[idf]=nome;
+        const val=cancelado?0:valorFinalizacaoLiquido(f);
+        somaCupom+=val;
         if(!caixas[cx]) caixas[cx]=[];
         caixas[cx].push(`Finalizadora ${idf}${nome?" - "+nome:""}: ${brl(val)}`);
       });
+
+      if(cancelado){
+        totalCancelado += Number(v.valorItensCancelados||0);
+        cancelamentos.push(`Caixa ${cx} → ${brl(v.valorItensCancelados||0)} (${v.qtdItensCancelados||0} itens cancelados)`);
+      }
+
       totalGeral+=somaCupom;
       if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
       if(cx>5) totalRestaurante+=somaCupom;
@@ -157,18 +157,20 @@ async function consultar(){
     document.getElementById('totalEmporio').innerText=brl(totalEmporio);
     document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
 
-    let html=`🧾 Total de cupons: ${filtradas.length}\n❌ Cancelados: ${cancelados}\n\n`;
+    // 🧾 Resumo
+    let html=`🧾 Total de cupons: ${vendas.length}\n❌ Cancelados: ${cancelamentos.length}\n💸 Valor Total Cancelado: ${brl(totalCancelado)}\n\n`;
     for(const [cx,itens] of Object.entries(caixas)){
       html+=`Caixa ${cx}\n`;
       html+=itens.map(i=>"├─ "+i).join("\n")+"\n\n";
     }
     resumo.textContent=html||'Nenhum dado no recorte selecionado.';
 
-    if(erros.length>0){
-      errosBox.innerHTML = `⚠️ Cupons com erro de data/hora (${erros.length}):\n` + erros.join("\n");
+    // 💥 Cancelamentos detalhados
+    if(cancelamentos.length>0){
+      canceladosBox.innerHTML = `💥 <b>Cancelamentos encontrados:</b>\n${cancelamentos.join("\n")}`;
     }
 
-    // lista de finalizadoras
+    // Finalizadoras encontradas
     let finalHtml = "<b>🧾 Finalizadoras encontradas:</b><br>";
     for(const [idf,nome] of Object.entries(usados)){
       if(nome){
