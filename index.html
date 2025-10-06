@@ -148,7 +148,13 @@ async function consultar(){
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
         const nome  = forma ? forma.descricao : "❌ Não catalogada";
-        const valor = Number(f.valor || 0);
+       const valor =
+  (Number(f.valor) || 0) -
+  (Number(f.troco) || 0) -
+  (Number(f.trocoDoacao) || 0) -
+  (Number(f.descontoMoeda) || 0) +
+  (Number(f.jurosPlano) || 0);
+
 
         if(!totais[idf]) totais[idf] = { nome, total: 0 };
         totais[idf].total += valor;
