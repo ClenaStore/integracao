@@ -14,14 +14,35 @@
     --red:#ef4444;
     --green:#16a34a;
   }
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui;padding:20px;}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui;padding:20px;
+  }
   h1{text-align:center;margin-bottom:20px;color:var(--teal);}
   .controls{text-align:center;margin-bottom:20px;}
-  input,button{padding:8px 10px;margin:4px;border-radius:6px;border:none;font-size:14px;}
+  input,button{
+    padding:8px 10px;margin:4px;border-radius:6px;
+    border:none;font-size:14px;
+  }
   button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
-  #layout{display:flex;gap:40px;align-items:flex-start;justify-content:center;}
-  #resumo{width:45%;white-space:pre-wrap;line-height:1.5;font-size:14px;background:#101827;padding:15px;border-radius:10px;overflow:auto;max-height:80vh;}
-  #saida{flex:1;background:#111a2e;padding:20px;border-radius:8px;overflow:auto;font-size:12px;color:#00ffaa;max-height:80vh;}
+  #layout{
+    display:flex;gap:40px;align-items:flex-start;justify-content:center;
+  }
+  #resumo{
+    width:45%;white-space:pre-wrap;line-height:1.5;font-size:14px;
+    background:#101827;padding:15px;border-radius:10px;
+    overflow:auto;max-height:80vh;
+  }
+  #saida{
+    flex:1;background:#111a2e;padding:20px;border-radius:8px;
+    overflow:auto;font-size:12px;color:#00ffaa;
+    max-height:80vh;
+  }
+  table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;}
+  th,td{border-bottom:1px solid #1f2937;padding:6px;text-align:left;}
+  th{color:var(--teal);}
+  tr:hover{background:#182237;}
+  .total{font-weight:700;color:var(--green);}
   @media(max-width:900px){#layout{flex-direction:column}#resumo{width:100%}}
 </style>
 </head>
@@ -67,11 +88,6 @@ const formasPagamento=[
 
 const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-// ➜ Agora usamos o valor BRUTO da finalização, sem nenhum ajuste.
-function valorFinalizacaoBruto(f){
-  return Number(f?.valor ?? 0);
-}
-
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
   const dataFim    = document.getElementById('dataFim').value;
@@ -82,11 +98,11 @@ async function consultar(){
   saida.textContent  = "🔄 Buscando dados...";
 
   try{
-    // Login
+    // 🔐 Login
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // Busca cupons (o backend já usa apenas dataVenda ge/le, sem hora)
+    // 🔗 Busca cupons
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -101,49 +117,53 @@ async function consultar(){
       return;
     }
 
-    let html = `🧾 Total de Cupons: ${vendas.length}\n\n`;
-    const totaisFinalizadoras = {};
+    // === Montagem da lista de cupons ===
+    let tabela = `
+    <table>
+      <thead>
+        <tr><th>Caixa</th><th>Finalizadora</th><th>Valor</th><th>Cupom</th></tr>
+      </thead>
+      <tbody>
+    `;
+    const totais = {};
     let totalGeral = 0;
 
     for(const v of vendas){
-      const cx  = v.numeroCaixa || "???";
-      const seq = v.sequencial || v.id || "—";
-      const fins = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
-      const canceladoCupom = (v.valorItensCancelados>0 || v.qtdItensCancelados>0);
+      const caixa = v.numeroCaixa || "—";
+      const seq   = v.sequencial || v.id || "—";
+      const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
 
       fins.forEach(f=>{
-        const idf = String(f?.finalizadoraId ?? "?").replace(/^0+/, "");
+        const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
-        const nome  = forma ? forma.descricao : `❌ Não catalogada`;
-        const val   = valorFinalizacaoBruto(f); // ← BRUTO
+        const nome  = forma ? forma.descricao : "❌ Não catalogada";
+        const valor = Number(f.valor || 0);
 
-        // somatórios (inclui TUDO, inclusive cancelados)
-        totalGeral += val;
-        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0, count: 0 };
-        totaisFinalizadoras[idf].total += val;
-        totaisFinalizadoras[idf].count++;
+        // soma total
+        if(!totais[idf]) totais[idf] = { nome, total: 0 };
+        totais[idf].total += valor;
+        totalGeral += valor;
 
-        // detalhamento do cupom
-        html += 
-          `📄 Cupom: ${seq}\n`+
-          `   Caixa: ${cx}\n`+
-          `   Finalizadora ${idf} - ${nome}\n`+
-          `   Valor: ${brl(val)}\n`+
-          `   Status: ${canceladoCupom ? "❌ CANCELADO" : "✅ ATIVO"}\n\n`;
+        tabela += `<tr>
+          <td>${caixa}</td>
+          <td>${idf} - ${nome}</td>
+          <td>${brl(valor)}</td>
+          <td>${seq}</td>
+        </tr>`;
       });
     }
 
-    // Totais por finalizadora + total geral
-    html += "===============================\n";
-    html += "💰 TOTAIS POR FINALIZADORA (TODOS OS CUPONS):\n";
-    const ordenado = Object.entries(totaisFinalizadoras).sort((a,b)=>b[1].total - a[1].total);
-    for(const [idf, info] of ordenado){
-      html += `   ${idf} - ${info.nome}: ${brl(info.total)} (${info.count} cupons)\n`;
-    }
-    html += "\n===============================\n";
-    html += `💵 TOTAL GERAL DO PERÍODO: ${brl(totalGeral)}\n`;
+    tabela += "</tbody></table>";
 
-    resumo.textContent = html;
+    // === Totais por finalizadora ===
+    let totaisHtml = "<h3>💰 Totais por Finalizadora</h3><table><tbody>";
+    const ordenado = Object.entries(totais).sort((a,b)=>b[1].total - a[1].total);
+    for(const [idf, info] of ordenado){
+      totaisHtml += `<tr><td>${idf} - ${info.nome}</td><td class="total">${brl(info.total)}</td></tr>`;
+    }
+    totaisHtml += `<tr><td><b>TOTAL GERAL</b></td><td class="total">${brl(totalGeral)}</td></tr></tbody></table>`;
+
+    resumo.innerHTML = tabela + totaisHtml;
 
   }catch(e){
     resumo.textContent='❌ Erro ao buscar dados.';
