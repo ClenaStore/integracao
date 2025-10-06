@@ -112,7 +112,7 @@ async function consultar(){
 
     const vendas = raw.items || [];
 
-    // 3) Filtro por data/hora local
+    // 3) Filtro de data/hora local
     const start = new Date(`${dataInicio}T${horaInicio}:00`);
     const end   = new Date(`${dataFim}T${horaFim}:59`);
     const filtradas = vendas.filter(v=>{
@@ -120,50 +120,60 @@ async function consultar(){
       return d >= start && d <= end;
     });
 
-    // 4) Totais gerais
-    let totalGeral=0,totalEmporio=0,totalRestaurante=0;
+    // 4) Totais gerais (sem somar cancelados)
+    let totalGeral=0,totalEmporio=0,totalRestaurante=0,totalCancelados=0;
+    const caixas={};
+
     filtradas.forEach(v=>{
       const cx=parseInt(v.numeroCaixa||"0",10);
       const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
       const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
-      totalGeral+=somaCupom;
-      if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
-      if(cx>5) totalRestaurante+=somaCupom;
+      const cancelado = v.cancelado || v.status==="CANCELADO" || v.situacao==="CANCELADO";
+
+      if(cancelado) totalCancelados++;
+      else{
+        totalGeral+=somaCupom;
+        if(cx>=1&&cx<=5) totalEmporio+=somaCupom;
+        if(cx>5) totalRestaurante+=somaCupom;
+      }
+
+      if(!caixas[cx]) caixas[cx]={total:0,cancelados:0,grupos:{}};
+      if(cancelado) caixas[cx].cancelados++;
+      else {
+        fins.forEach(f=>{
+          const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
+          const nome=forma?forma.descricao:"Desconhecida";
+          const grupo=encontrarGrupo(nome);
+          const val=valorFinalizacaoLiquido(f);
+          if(!caixas[cx].grupos[grupo]) caixas[cx].grupos[grupo]={total:0,count:0};
+          caixas[cx].grupos[grupo].total+=val;
+          caixas[cx].grupos[grupo].count++;
+          caixas[cx].total+=val;
+        });
+      }
     });
 
+    // Atualiza os cards
     document.getElementById('totalGeral').innerText=brl(totalGeral);
     document.getElementById('totalEmporio').innerText=brl(totalEmporio);
     document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
 
-    // 5) Resumo por caixa
-    const caixas={};
-    filtradas.forEach(v=>{
-      const cx=v.numeroCaixa||"000";
-      if(!caixas[cx]) caixas[cx]={};
-      (v.finalizacoes||[]).forEach(f=>{
-        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
-        const nome=forma?forma.descricao:"Desconhecida";
-        const grupo=encontrarGrupo(nome);
-        const val=valorFinalizacaoLiquido(f);
-        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
-        caixas[cx][grupo].total+=val;
-        caixas[cx][grupo].count++;
-      });
-    });
-
+    // 5) Monta o resumo completo
     const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
-    let html='';
+    let html=`🧾 Total de cupons: ${filtradas.length}\n❌ Cancelados: ${totalCancelados}\n\n`;
+
     for(const cx of caixasOrdenadas){
       html+=`Caixa ${cx}\n`;
-      let somaCaixa=0;
-      for(const [g,info] of Object.entries(caixas[cx])){
+      if(caixas[cx].cancelados>0)
+        html+=`   ❌ Cancelados: ${caixas[cx].cancelados} cupons\n`;
+      for(const [g,info] of Object.entries(caixas[cx].grupos)){
         html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
-        somaCaixa+=info.total;
       }
-      // 💰 soma total do caixa
-      html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
+      html+=`→ Total Caixa ${cx}: ${brl(caixas[cx].total)}\n\n`;
     }
+
     resumo.textContent=html||'Nenhum dado no recorte selecionado.';
+
   }catch(e){
     saida.textContent='Erro: '+e.message;
     resumo.textContent='Erro: '+e.message;
