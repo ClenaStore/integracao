@@ -5,27 +5,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { token, dataInicio, dataFim, horaInicio, horaFim } = req.body;
+    const { token, dataInicio, dataFim } = req.body;
 
     if (!token) {
       return res.status(400).json({ error: "Token de autenticação ausente" });
     }
 
-    // 🔧 Formata datas e horas no padrão ISO esperado pela API
-    // Exemplo: 2025-10-01T08:00:00
-    const inicioFormatado = `${dataInicio}T${horaInicio}:00`;
-    const fimFormatado = `${dataFim}T${horaFim}:59`;
+    // 🔧 Formata apenas as datas (sem hora)
+    const inicioFormatado = dataInicio; // ex: 2025-10-02
+    const fimFormatado = dataFim;
 
-    // Garante que o formato tenha 2 dígitos
-    const normalizar = (v) => (v.length === 1 ? `0${v}` : v);
-
-    console.log("🔍 Filtro de datas e horas:");
+    console.log("🔍 Filtro de datas:");
     console.log("Início:", inicioFormatado);
     console.log("Fim:", fimFormatado);
 
-    // Monta a query da API com o formato exato usado pelo Varejo Fácil
+    // Monta a query da API no formato aceito pelo Varejo Fácil
     const baseURL = "https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais";
-    const count = 200;
+    const count = 500;
     let start = 0;
     let allItems = [];
 
