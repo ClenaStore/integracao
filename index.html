@@ -110,7 +110,7 @@ async function consultar(){
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // 🔗 Busca cupons sem hora, apenas por dataVenda
+    // 🔗 Busca cupons
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -126,7 +126,7 @@ async function consultar(){
     }
 
     let html = `🧾 Total de Cupons: ${vendas.length}\n\n`;
-    const totaisFinalizadoras = {}; // soma por finalizadora
+    const totaisFinalizadoras = {};
 
     for(const v of vendas){
       const cx = v.numeroCaixa || "???";
@@ -138,29 +138,27 @@ async function consultar(){
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
         const nome = forma ? forma.descricao : `❌ Não catalogada`;
+        const val = valorFinalizacaoLiquido(f);
 
-        // 🔍 Verifica se essa finalização é de um item cancelado
-        const canceladoFinal = (f.cancelado === true || canceladoCupom);
-        const val = canceladoFinal ? 0 : valorFinalizacaoLiquido(f);
-
-        // acumula valor por finalizadora
-        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0, count: 0 };
+        // 🔢 Acumula valor (mesmo se cancelado)
+        if(!totaisFinalizadoras[idf]) totaisFinalizadoras[idf] = { nome, total: 0, count: 0, cancelado: 0 };
         totaisFinalizadoras[idf].total += val;
         totaisFinalizadoras[idf].count++;
+        if(canceladoCupom) totaisFinalizadoras[idf].cancelado += val;
 
         html += 
           `📄 Cupom: ${seq}\n`+
           `   Caixa: ${cx}\n`+
           `   Finalizadora ${idf} - ${nome}\n`+
           `   Valor: ${brl(val)}\n`+
-          `   Status: ${canceladoFinal ? "❌ CANCELADO" : "✅ ATIVO"}\n\n`;
+          `   Status: ${canceladoCupom ? "❌ CANCELADO" : "✅ ATIVO"}\n\n`;
       });
     }
 
     // =============================
     // 💰 Totais por finalizadora
     html += "===============================\n";
-    html += "💰 TOTAIS POR FINALIZADORA:\n";
+    html += "💰 TOTAIS POR FINALIZADORA (TODOS OS CUPONS):\n";
     const ordenado = Object.entries(totaisFinalizadoras).sort((a,b)=>b[1].total - a[1].total);
     for(const [idf, info] of ordenado){
       html += `   ${idf} - ${info.nome}: ${brl(info.total)} (${info.count} cupons)\n`;
