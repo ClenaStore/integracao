@@ -39,7 +39,9 @@
 
   <div class="controls">
     <input type="date" id="dataInicio">
+    <input type="time" id="horaInicio" value="00:00">
     <input type="date" id="dataFim">
+    <input type="time" id="horaFim" value="23:59">
     <button onclick="consultar()">Consultar</button>
   </div>
 
@@ -58,31 +60,7 @@
   <div id="finalizadoras"></div>
 
 <script>
-// 🔹 Finalizadoras atualizadas sem zero à esquerda
-const formasPagamento = [
-  { id: "1",  descricao: "DINHEIRO" },
-  { id: "2",  descricao: "CARTAO CREDITO TEF" },
-  { id: "3",  descricao: "CARTAO DEBITO TEF" },
-  { id: "4",  descricao: "PIX CNPJ" },
-  { id: "5",  descricao: "CONSUMO FUNCIONARIOS" },
-  { id: "6",  descricao: "REFEICAO ALIME. TEF" },
-  { id: "7",  descricao: "TOTEM CREDITO" },
-  { id: "8",  descricao: "TOTEM DEBITO" },
-  { id: "9",  descricao: "BONIFICACAO" },
-  { id: "15", descricao: "PIX QRCODE POS" },
-  { id: "16", descricao: "PIX TEF" },
-  { id: "17", descricao: "CREDITO POS" },
-  { id: "18", descricao: "DEBITO POS" },
-  { id: "19", descricao: "CART ALIMENTACAO POS" },
-  { id: "25", descricao: "BOLETO MERCATTO KIDS" },
-  { id: "26", descricao: "CREDIARIO CLIENTES" },
-  { id: "27", descricao: "CONSUMO SOCIO" },
-  { id: "29", descricao: "VOUCHER" },
-  { id: "32", descricao: "PAGAMENTO ONLINE" },
-  { id: "34", descricao: "MARKETING" },
-  { id: "36", descricao: "PREJUIZO" },
-  { id: "999", descricao: "SEM FATURAMENTO" }
-];
+const formasPagamento=[{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"12","descricao":"PGTO ONLINE DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"34","descricao":"MARKETING"},{"id":"28","descricao":"BOLETO DELICIA INDUS"},{"id":"29","descricao":"VOUCHER"},{"id":"10","descricao":"BOLETO"},{"id":"30","descricao":"PGT ONLINE DELIVERY"},{"id":"14","descricao":"PGTO ONLINE DINHEIRO"},{"id":"13","descricao":"PGTO ONLINE PIX"},{"id":"11","descricao":"PGTO ONLINE CREDITO"},{"id":"4","descricao":"PIX CNPJ"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"33","descricao":"VOUCHER POS"},{"id":"1","descricao":"DINHEIRO"},{"id":"35","descricao":"VALE MERCATTO"},{"id":"36","descricao":"PREJUIZO"},{"id":"16","descricao":"PIX TEF"},{"id":"31","descricao":"PGT ONLINE IFOOD"},{"id":"20","descricao":"BOLETO FAMILY PRODUT"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"22","descricao":"BOLETO DELICIA PRODU"},{"id":"24","descricao":"BOLETO ALL TIME CHOP"},{"id":"21","descricao":"BOLETO FOODS TIME"},{"id":"23","descricao":"BOLETO MEOS GOURMET"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"}];
 
 const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
@@ -95,9 +73,21 @@ function valorFinalizacaoLiquido(f){
   return v - tr - td - dm + jp;
 }
 
+function obterDataCupom(v){
+  try{
+    if(v.dataHoraAberturaCupom) return new Date(v.dataHoraAberturaCupom);
+    if(v.dataHoraFechamentoCupom) return new Date(v.dataHoraFechamentoCupom);
+    if(v.dataVenda) return new Date(v.dataVenda+"T00:00:00");
+    const h = String(v.hora||"0000").padStart(4,"0");
+    return new Date(`${v.data}T${h.slice(0,2)}:${h.slice(2)}:00`);
+  }catch{ return null; }
+}
+
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
   const dataFim    = document.getElementById('dataFim').value;
+  const horaInicio = document.getElementById('horaInicio').value;
+  const horaFim    = document.getElementById('horaFim').value;
   const saida  = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
   const errosBox = document.getElementById('erros');
@@ -113,34 +103,31 @@ async function consultar(){
     const loginResp = await fetch('/api/login',{method:'POST'});
     const {accessToken} = await loginResp.json();
 
-    // Busca todos os cupons do dia (ignora hora)
+    // Busca
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        token:accessToken,
-        dataInicio,
-        dataFim,
-        horaInicio:"00:00",
-        horaFim:"23:59"
-      })
+      body:JSON.stringify({token:accessToken,dataInicio,dataFim,horaInicio,horaFim})
     });
     const raw = await resp.json();
     saida.textContent = JSON.stringify(raw,null,2);
 
     const vendas = raw.items || [];
-    const erros = [];
-    const usados = {};
 
-    // Usa todos os cupons que tenham dataVenda ou data
-    const filtradas = vendas.filter(v=>{
-      const dia = v.dataVenda || v.data;
-      if(!dia){
-        erros.push(`ID ${v.id} - Cupom sem data válida`);
-        return false;
+    const start = new Date(`${dataInicio}T${horaInicio}:00`);
+    const end   = new Date(`${dataFim}T${horaFim}:59`);
+    const filtradas = [];
+    const erros = [];
+    const usados = {}; // registrar finalizadoras encontradas
+
+    for(const v of vendas){
+      const d = obterDataCupom(v);
+      if(!d || isNaN(d.getTime())){
+        erros.push(`ID ${v.id} - Data inválida (${v.data||"?"} ${v.hora||"?"})`);
+        continue;
       }
-      return true;
-    });
+      if(d >= start && d <= end) filtradas.push(v);
+    }
 
     let totalGeral=0,totalEmporio=0,totalRestaurante=0,cancelados=0;
     const caixas={};
@@ -154,7 +141,7 @@ async function consultar(){
       fins.forEach(f=>{
         const val=cancelado?0:valorFinalizacaoLiquido(f);
         somaCupom+=val;
-        const idf=(f.finalizadoraId||"?").replace(/^0+/,""); // remove zeros à esquerda
+        const idf=f.finalizadoraId||"?";
         const forma=formasPagamento.find(fp=>fp.id==idf);
         const nome=forma?forma.descricao:null;
         usados[idf]=nome;
@@ -175,13 +162,13 @@ async function consultar(){
       html+=`Caixa ${cx}\n`;
       html+=itens.map(i=>"├─ "+i).join("\n")+"\n\n";
     }
-    resumo.textContent=html||'Nenhum dado no dia selecionado.';
+    resumo.textContent=html||'Nenhum dado no recorte selecionado.';
 
     if(erros.length>0){
-      errosBox.innerHTML = `⚠️ Cupons com erro (${erros.length}):\n` + erros.join("\n");
+      errosBox.innerHTML = `⚠️ Cupons com erro de data/hora (${erros.length}):\n` + erros.join("\n");
     }
 
-    // Lista de finalizadoras encontradas
+    // lista de finalizadoras
     let finalHtml = "<b>🧾 Finalizadoras encontradas:</b><br>";
     for(const [idf,nome] of Object.entries(usados)){
       if(nome){
