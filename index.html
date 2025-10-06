@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Consulta Recebimentos Mercatto</title>
+<title>Consulta Cupons Fiscais Mercatto</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -23,13 +23,11 @@
 </style>
 </head>
 <body>
-  <h1>Consulta Recebimentos Mercatto</h1>
+  <h1>Consulta Cupons Fiscais – Mercatto</h1>
 
   <div class="controls">
     <input type="date" id="dataInicio">
-    <input type="time" id="horaInicio" value="00:00" disabled>
     <input type="date" id="dataFim">
-    <input type="time" id="horaFim" value="23:59" disabled>
     <button onclick="consultar()">Consultar</button>
   </div>
 
@@ -45,130 +43,101 @@
   </div>
 
 <script>
-const formasPagamento=[{"id":"2","descricao":"CARTAO CREDITO TEF"},{"id":"3","descricao":"CARTAO DEBITO TEF"},{"id":"5","descricao":"CONSUMO FUNCIONARIOS"},{"id":"12","descricao":"PGTO ONLINE DEBITO"},{"id":"9","descricao":"BONIFICACAO"},{"id":"34","descricao":"MARKETING"},{"id":"28","descricao":"BOLETO DELICIA INDUS"},{"id":"29","descricao":"VOUCHER"},{"id":"10","descricao":"BOLETO"},{"id":"30","descricao":"PGT ONLINE DELIVERY"},{"id":"14","descricao":"PGTO ONLINE DINHEIRO"},{"id":"13","descricao":"PGTO ONLINE PIX"},{"id":"11","descricao":"PGTO ONLINE CREDITO"},{"id":"4","descricao":"PIX CNPJ"},{"id":"32","descricao":"PAGAMENTO ONLINE"},{"id":"33","descricao":"VOUCHER POS"},{"id":"1","descricao":"DINHEIRO"},{"id":"35","descricao":"VALE MERCATTO"},{"id":"36","descricao":"PREJUIZO"},{"id":"16","descricao":"PIX TEF"},{"id":"31","descricao":"PGT ONLINE IFOOD"},{"id":"20","descricao":"BOLETO FAMILY PRODUT"},{"id":"17","descricao":"CREDITO POS"},{"id":"18","descricao":"DEBITO POS"},{"id":"6","descricao":"REFEICAO ALIME. TEF"},{"id":"19","descricao":"CART ALIMENTACAO POS"},{"id":"7","descricao":"TOTEM CREDITO"},{"id":"15","descricao":"PIX QRCODE POS"},{"id":"8","descricao":"TOTEM DEBITO"},{"id":"22","descricao":"BOLETO DELICIA PRODU"},{"id":"24","descricao":"BOLETO ALL TIME CHOP"},{"id":"21","descricao":"BOLETO FOODS TIME"},{"id":"23","descricao":"BOLETO MEOS GOURMET"},{"id":"25","descricao":"BOLETO MERCATTO KIDS"},{"id":"26","descricao":"CREDIARIO CLIENTES"},{"id":"27","descricao":"CONSUMO SOCIO"}];
-
-const grupos={
-  "crédito":["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery"],
-  "débito":["debito","pgto online debito","cartao debito","totem debito","debito pos"],
-  "pix":["pix","pgto online pix","pix tef","pix cnpj","pix qrcode pos"],
-  "dinheiro":["dinheiro","pgto online dinheiro"],
-  "boleto":["boleto"],
-  "voucher":["voucher","cartao voucher","voucher pos"],
-  "bonificação":["bonificacao"],
-  "marketing":["marketing"],
-  "outros":[]
-};
-
+// Formata número em reais
 const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const normaliza = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-function encontrarGrupo(desc){const d=normaliza(desc);for(const [g,ts] of Object.entries(grupos)){if(ts.some(t=>d.includes(t))) return g}return "outros"}
 
-function valorFinalizacaoLiquido(f){
-  const v  = Number(f.valor||0);
-  const tr = Number(f.troco||0);
-  const td = Number(f.trocoDoacao||0);
-  const dm = Number(f.descontoMoeda||0);
-  const jp = Number(f.jurosPlano||0);
-  return v - tr - td - dm + jp;
-}
-
-function toDateLocal(v){
-  const hhmm = String(v.hora||"0000").padStart(4,"0");
-  return new Date(`${v.data}T${hhmm.slice(0,2)}:${hhmm.slice(2)}:00`);
+function formatarDataISO(data, hora){
+  return `${data}T${hora}`;
 }
 
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value || dataInicio;
-  const saida  = document.getElementById('saida');
+  const dataFim = document.getElementById('dataFim').value;
+  const saida = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
 
-  if(!dataInicio){alert("Selecione a data.");return;}
+  if(!dataInicio || !dataFim){
+    alert("Selecione a data inicial e final.");
+    return;
+  }
 
-  saida.textContent  = "🔄 Buscando dados...";
+  saida.textContent = "🔄 Buscando cupons fiscais...";
   resumo.textContent = "🔄 Processando...";
 
-  try{
-    // Login
-    const loginResp = await fetch('/api/login',{method:'POST'});
-    const {accessToken} = await loginResp.json();
+  try {
+    // Monta URL com os parâmetros de filtro
+    const url = `https://mercatto.varejofacil.com/api/v1/venda/cupons-fiscais?start=0&q=dataVenda=ge=${formatarDataISO(dataInicio,"00:00:00")};dataVenda=le=${formatarDataISO(dataFim,"23:59:59")}&count=1000`;
 
-    // Converte formato corretamente
-    const dataIniFmt = new Date(dataInicio).toISOString().split('T')[0];
-    const dataFimFmt = new Date(dataFim).toISOString().split('T')[0];
+    const resp = await fetch(url);
+    if(!resp.ok) throw new Error(`Erro HTTP ${resp.status}`);
 
-    // Busca de dados
-    const resp = await fetch('/api/recebimentos',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ token:accessToken, dataInicio:dataIniFmt, dataFim:dataFimFmt })
-    });
     const raw = await resp.json();
+    saida.textContent = JSON.stringify(raw, null, 2);
 
-    if(raw.error){
-      resumo.textContent = "Erro ao buscar dados.";
-      saida.textContent = JSON.stringify(raw, null, 2);
+    const cupons = raw.items || raw || [];
+
+    if(!Array.isArray(cupons) || cupons.length === 0){
+      resumo.textContent = "Nenhum cupom encontrado no período.";
       return;
     }
 
-    const vendas = raw.items || [];
-    const start = new Date(`${dataIniFmt}T00:00:00`);
-    const end   = new Date(`${dataFimFmt}T23:59:59`);
-    const filtradas = vendas.filter(v=>{
-      const d = toDateLocal(v);
-      return d >= start && d <= end;
-    });
-
+    // Totais por tipo
     let totalGeral=0,totalEmporio=0,totalRestaurante=0;
-    const caixas={};
-    const naoCatalogadas={};
+    const caixas={}, naoCatalogadas={};
 
-    filtradas.forEach(v=>{
-      const cx=v.numeroCaixa||"000";
+    cupons.forEach(c=>{
+      const cx = c.numeroCaixa || c.caixa || "000";
       if(!caixas[cx]) caixas[cx]={};
 
-      (v.finalizacoes||[]).forEach(f=>{
-        const forma=formasPagamento.find(fp=>fp.id==f.finalizadoraId);
-        const nome=forma?forma.descricao:`FINALIZADORA ${f.finalizadoraId}`;
-        const grupo=forma?encontrarGrupo(nome):"não catalogada";
-        const val=valorFinalizacaoLiquido(f);
+      // Total do cupom
+      const valorCupom = Number(c.valorTotal || c.valorLiquido || 0);
+      totalGeral += valorCupom;
 
-        if(!forma){
-          if(!naoCatalogadas[nome]) naoCatalogadas[nome]=0;
-          naoCatalogadas[nome]+=val;
-        }
+      const cxNum = parseInt(cx,10);
+      if(cxNum>=1 && cxNum<=5) totalEmporio+=valorCupom;
+      if(cxNum>5) totalRestaurante+=valorCupom;
 
-        if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
-        caixas[cx][grupo].total+=val;
-        caixas[cx][grupo].count++;
-      });
+      // Finalizadoras (se existirem)
+      if(c.finalizadoras && Array.isArray(c.finalizadoras)){
+        c.finalizadoras.forEach(f=>{
+          const nome = f.descricao || f.nome || `FINALIZADORA ${f.id||"?"}`;
+          const valor = Number(f.valor||0);
+          const grupo = nome.toLowerCase().includes("pix")?"PIX":
+                        nome.toLowerCase().includes("credito")?"Crédito":
+                        nome.toLowerCase().includes("debito")?"Débito":
+                        nome.toLowerCase().includes("dinheiro")?"Dinheiro":"Não catalogada";
+          
+          if(!caixas[cx][grupo]) caixas[cx][grupo]={total:0,count:0};
+          caixas[cx][grupo].total+=valor;
+          caixas[cx][grupo].count++;
 
-      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
-      const somaCupom=fins.reduce((s,f)=>s+valorFinalizacaoLiquido(f),0);
-      totalGeral+=somaCupom;
-      const cxNum=parseInt(v.numeroCaixa||"0",10);
-      if(cxNum>=1&&cxNum<=5) totalEmporio+=somaCupom;
-      if(cxNum>5) totalRestaurante+=somaCupom;
+          if(grupo==="Não catalogada"){
+            if(!naoCatalogadas[nome]) naoCatalogadas[nome]=0;
+            naoCatalogadas[nome]+=valor;
+          }
+        });
+      }
     });
 
+    // Atualiza cards
     document.getElementById('totalGeral').innerText=brl(totalGeral);
     document.getElementById('totalEmporio').innerText=brl(totalEmporio);
     document.getElementById('totalRestaurante').innerText=brl(totalRestaurante);
 
-    // Monta resumo
+    // Gera resumo
     const caixasOrdenadas=Object.keys(caixas).sort((a,b)=>parseInt(a)-parseInt(b));
     let html='';
     for(const cx of caixasOrdenadas){
       html+=`Caixa ${cx}\n`;
       let somaCaixa=0;
       for(const [g,info] of Object.entries(caixas[cx])){
-        html+=`├─ ${g.charAt(0).toUpperCase()+g.slice(1)}: ${brl(info.total)} (${info.count} vendas)\n`;
+        html+=`├─ ${g}: ${brl(info.total)} (${info.count} vendas)\n`;
         somaCaixa+=info.total;
       }
       html+=`→ Total Caixa ${cx}: ${brl(somaCaixa)}\n\n`;
     }
 
-    // Finalizadoras não catalogadas
+    // Lista de finalizadoras não catalogadas
     const desconhecidas = Object.entries(naoCatalogadas);
     if(desconhecidas.length){
       html += `⚠️ Finalizadoras não catalogadas:\n`;
@@ -178,12 +147,11 @@ async function consultar(){
       html += '\n';
     }
 
-    resumo.textContent = html || 'Nenhum dado no dia selecionado.';
-    saida.textContent  = JSON.stringify(raw,null,2);
+    resumo.textContent = html || 'Nenhum dado encontrado no período.';
 
-  }catch(e){
-    resumo.textContent = 'Erro: '+e.message;
-    saida.textContent  = 'Erro: '+e.message;
+  } catch (e) {
+    resumo.textContent = '❌ Erro: ' + e.message;
+    saida.textContent = e.stack || e.message;
   }
 }
 </script>
