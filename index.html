@@ -133,16 +133,25 @@ async function consultar(){
       const seq   = v.sequencial || v.id || "—";
       const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
 
+      // 🧮 cálculo do valor real do cupom
+      const valorCupom = 
+        (Number(v.valor) || 0) +
+        (Number(v.acrescimo) || 0) +
+        (Number(v.valorServico) || 0) -
+        (Number(v.desconto) || 0) -
+        (Number(v.valorItensCancelados) || 0);
+
+      totalGeral += valorCupom;
+
+      // Lista cada finalizadora do cupom
       fins.forEach(f=>{
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp=>fp.id==idf);
         const nome  = forma ? forma.descricao : "❌ Não catalogada";
         const valor = Number(f.valor || 0);
 
-        // soma total
         if(!totais[idf]) totais[idf] = { nome, total: 0 };
         totais[idf].total += valor;
-        totalGeral += valor;
 
         tabela += `<tr>
           <td>${caixa}</td>
@@ -161,7 +170,7 @@ async function consultar(){
     for(const [idf, info] of ordenado){
       totaisHtml += `<tr><td>${idf} - ${info.nome}</td><td class="total">${brl(info.total)}</td></tr>`;
     }
-    totaisHtml += `<tr><td><b>TOTAL GERAL</b></td><td class="total">${brl(totalGeral)}</td></tr></tbody></table>`;
+    totaisHtml += `<tr><td><b>TOTAL GERAL DO PERÍODO</b></td><td class="total">${brl(totalGeral)}</td></tr></tbody></table>`;
 
     resumo.innerHTML = tabela + totaisHtml;
 
