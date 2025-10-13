@@ -20,11 +20,12 @@
   }
   h1{text-align:center;margin-bottom:20px;color:var(--teal);}
   .controls{text-align:center;margin-bottom:20px;}
-  input,button{
+  input,button,select{
     padding:8px 10px;margin:4px;border-radius:6px;
     border:none;font-size:14px;
   }
   button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
+  select{background:#101827;color:var(--ink);}
   #layout{
     display:flex;gap:40px;align-items:flex-start;justify-content:center;
   }
@@ -50,6 +51,11 @@
   <h1>Consulta Cupons Fiscais – Mercatto</h1>
 
   <div class="controls">
+    <select id="empresa">
+      <option value="VAREJO_URL_DELICIA">MERCATTO DELÍCIA</option>
+      <option value="VAREJO_URL_VILLA">VILLA GOURMET</option>
+      <option value="VAREJO_URL_PADARIA">PADARIA DELÍCIA</option>
+    </select>
     <input type="date" id="dataInicio">
     <input type="date" id="dataFim">
     <button onclick="consultar()">Consultar</button>
@@ -89,6 +95,7 @@ const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
   const dataFim    = document.getElementById('dataFim').value;
+  const empresa    = document.getElementById('empresa').value;
   const saida  = document.getElementById('saida');
   const resumo = document.getElementById('resumo');
 
@@ -96,15 +103,19 @@ async function consultar(){
   saida.textContent  = "🔄 Buscando dados...";
 
   try{
-    // Login
-    const loginResp = await fetch('/api/login',{method:'POST'});
+    // Login (enviando nome da empresa)
+    const loginResp = await fetch('/api/login',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({empresa})
+    });
     const {accessToken} = await loginResp.json();
 
     // Busca de cupons
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim})
+      body:JSON.stringify({token:accessToken,dataInicio,dataFim,empresa})
     });
     const raw = await resp.json();
     saida.textContent = JSON.stringify(raw,null,2);
@@ -139,7 +150,6 @@ async function consultar(){
       const trocoDoa  = Number(v.trocoDoacao || 0);
       const descMoeda = Number(v.descontoMoeda || 0);
 
-      // Distribui ajustes proporcionalmente entre as finalizadoras
       fins.forEach(f => {
         const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
         const forma = formasPagamento.find(fp => fp.id == idf);
@@ -164,7 +174,6 @@ async function consultar(){
 
     tabela += "</tbody></table>";
 
-    // Totais por finalizadora
     let totaisHtml = "<h3>💰 Totais por Finalizadora</h3><table><tbody>";
     const ordenado = Object.entries(totais).sort((a,b)=>b[1].total - a[1].total);
     for(const [idf, info] of ordenado){
