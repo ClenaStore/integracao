@@ -102,17 +102,9 @@ th, td {
   padding: 8px;
   border-bottom: 1px solid #1e293b;
 }
-th {
-  text-align: left;
-  color: var(--accent);
-}
-tr:hover {
-  background: #111b34;
-}
-.total {
-  font-weight: bold;
-  color: var(--green);
-}
+th { text-align: left; color: var(--accent); }
+tr:hover { background: #111b34; }
+.total { font-weight: bold; color: var(--green); }
 #headerResumo {
   background: linear-gradient(90deg, #06b6d4, #0ea5e9);
   border-radius: var(--radius);
@@ -122,27 +114,28 @@ tr:hover {
   color: #fff;
   margin-bottom: 10px;
 }
+.indicadores {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 15px;
+  text-align: center;
+}
+.indicador {
+  background: #111b34;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+.indicador.cancelado { color: var(--red); }
+.indicador.vendido { color: var(--green); }
 .loading {
   text-align: center;
   color: var(--accent);
   font-weight: 500;
   animation: pulse 1.2s infinite;
 }
-@keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
-}
-pre {
-  background: #030712;
-  color: #0ff;
-  padding: 15px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  overflow: auto;
-}
-@media(max-width:900px) {
-  #layout { flex-direction: column; }
-}
+@keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1}}
+@media(max-width:900px){#layout{flex-direction:column}}
 </style>
 </head>
 <body>
@@ -194,105 +187,90 @@ const formasPagamento=[
   {"id":"36","descricao":"PREJUIZO"},
   {"id":"999","descricao":"SEM FATURAMENTO"}
 ];
-
-const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const brl=n=>n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
 async function consultar(){
-  const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value;
-  const empresaSel = document.getElementById('empresa');
-  const empresa    = empresaSel.value;
-  const empresaNome = empresaSel.options[empresaSel.selectedIndex].text;
+  const dataInicio=document.getElementById('dataInicio').value;
+  const dataFim=document.getElementById('dataFim').value;
+  const empresaSel=document.getElementById('empresa');
+  const empresa=empresaSel.value;
+  const empresaNome=empresaSel.options[empresaSel.selectedIndex].text;
 
-  const resumo = document.getElementById('resumo');
-  const saida  = document.getElementById('saida');
+  const resumo=document.getElementById('resumo');
+  const saida=document.getElementById('saida');
+  resumo.innerHTML=`<div class='loading'>🔄 Consultando ${empresaNome}...</div>`;
+  saida.innerHTML=`<div class='loading'>📡 Acessando base de dados...</div>`;
 
-  resumo.innerHTML = `<div class='loading'>🔄 Consultando ${empresaNome}...</div>`;
-  saida.innerHTML  = `<div class='loading'>📡 Acessando base de dados...</div>`;
-
-  try {
-    const loginResp = await fetch('/api/login',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({empresa})
-    });
-    const loginData = await loginResp.json();
-    const token = loginData.accessToken || loginData.token;
-
+  try{
+    const loginResp=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa})});
+    const loginData=await loginResp.json();
+    const token=loginData.accessToken||loginData.token;
     if(!token) throw new Error("Token não retornado pela API.");
 
-    const resp = await fetch('/api/recebimentos',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token,dataInicio,dataFim,empresa})
-    });
+    const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio,dataFim,empresa})});
+    const raw=await resp.json();
+    saida.textContent=JSON.stringify(raw,null,2);
 
-    const raw = await resp.json();
-    saida.textContent = JSON.stringify(raw,null,2);
-
-    const vendas = raw.items || [];
+    const vendas=raw.items||[];
     if(vendas.length===0){
-      resumo.innerHTML = `<div class='loading'>📭 Nenhum cupom encontrado para ${empresaNome}.</div>`;
+      resumo.innerHTML=`<div class='loading'>📭 Nenhum cupom encontrado para ${empresaNome}.</div>`;
       return;
     }
 
-    let tabela = `<div id="headerResumo">📍 ${empresaNome} — ${vendas.length} cupons encontrados</div>
-    <table>
-      <thead>
-        <tr><th>Caixa</th><th>Finalizadora</th><th>Valor Recebido</th><th>Cupom</th></tr>
-      </thead><tbody>`;
+    let tabela=`<div id="headerResumo">📍 ${empresaNome} — ${vendas.length} cupons encontrados</div>`;
+    let cancelados=0, validos=0;
+    let totalGeral=0;
+    const totais={};
 
-    const totais = {};
-    let totalGeral = 0;
+    for(const v of vendas){
+      if(v.cancelada){ cancelados++; continue; }
+      validos++;
+      const caixa=v.numeroCaixa||"—";
+      const seq=v.sequencial||v.id||"—";
+      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
+      if(fins.length===0) continue;
 
-    for (const v of vendas) {
-      if (v.cancelada) continue;
-      const caixa = v.numeroCaixa || "—";
-      const seq   = v.sequencial || v.id || "—";
-      const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
-      if (fins.length === 0) continue;
+      const acrescimo=Number(v.acrescimo||0);
+      const desconto=Number(v.desconto||0);
+      const trocoCupom=(fins.reduce((acc,f)=>acc+Number(f.troco||0),0))||0;
+      const trocoDoa=Number(v.trocoDoacao||0);
+      const descMoeda=Number(v.descontoMoeda||0);
+      const ajuste=(acrescimo - desconto - trocoCupom - trocoDoa - descMoeda)/fins.length;
 
-      const acrescimo = Number(v.acrescimo || 0);
-      const desconto  = Number(v.desconto || 0);
-      const troco     = Number(v.troco || 0);
-      const trocoDoa  = Number(v.trocoDoacao || 0);
-      const descMoeda = Number(v.descontoMoeda || 0);
-
-      fins.forEach(f => {
-        const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
-        const forma = formasPagamento.find(fp => fp.id == idf);
-        const nome  = forma ? forma.descricao : "❌ Não catalogada";
-
-        const valorBase = Number(f.valor || 0);
-        const ajuste = (acrescimo - desconto - troco - trocoDoa - descMoeda) / fins.length;
-        const valorFinal = valorBase + ajuste;
-
-        if(!totais[idf]) totais[idf] = { nome, total: 0 };
-        totais[idf].total += valorFinal;
-        totalGeral += valorFinal;
-
-        tabela += `<tr>
-          <td>${caixa}</td>
-          <td>${idf} - ${nome}</td>
-          <td>${brl(valorFinal)}</td>
-          <td>${seq}</td>
-        </tr>`;
+      fins.forEach(f=>{
+        const idf=String(f.finalizadoraId??"?").replace(/^0+/,"");
+        const forma=formasPagamento.find(fp=>fp.id==idf);
+        const nome=forma?forma.descricao:"❌ Não catalogada";
+        const valorBase=Number(f.valor||0);
+        const valorFinal=valorBase+ajuste;
+        if(!totais[idf]) totais[idf]={nome,total:0};
+        totais[idf].total+=valorFinal;
+        totalGeral+=valorFinal;
       });
     }
-    tabela += "</tbody></table>";
 
-    let totaisHtml = `<h2>💰 Totais por Finalizadora</h2><table><tbody>`;
-    const ordenado = Object.entries(totais).sort((a,b)=>b[1].total - a[1].total);
-    for(const [idf, info] of ordenado){
-      totaisHtml += `<tr><td>${idf} - ${info.nome}</td><td class='total'>${brl(info.total)}</td></tr>`;
+    const percentCancel=(cancelados/vendas.length*100).toFixed(1);
+    tabela+=`
+      <div class="indicadores">
+        <div class="indicador vendido" title="Cupons válidos (não cancelados)">
+          ✅ Válidos: <b>${validos}</b>
+        </div>
+        <div class="indicador cancelado" title="Cupons cancelados no período">
+          ❌ Cancelados: <b>${cancelados}</b> (${percentCancel}%)
+        </div>
+      </div>`;
+
+    let totaisHtml=`<h2>💰 Totais por Finalizadora</h2><table><tbody>`;
+    const ordenado=Object.entries(totais).sort((a,b)=>b[1].total-a[1].total);
+    for(const [idf,info] of ordenado){
+      totaisHtml+=`<tr><td>${idf} - ${info.nome}</td><td class='total'>${brl(info.total)}</td></tr>`;
     }
-    totaisHtml += `<tr><td><b>TOTAL GERAL</b></td><td class='total'>${brl(totalGeral)}</td></tr></tbody></table>`;
+    totaisHtml+=`<tr><td><b>TOTAL REAL VENDIDO</b></td><td class='total'>${brl(totalGeral)}</td></tr></tbody></table>`;
+    resumo.innerHTML=tabela+totaisHtml;
 
-    resumo.innerHTML = tabela + totaisHtml;
-
-  } catch (e) {
-    resumo.innerHTML = `<div class='loading' style='color:var(--red)'>❌ Erro ao buscar dados: ${e.message}</div>`;
-    saida.textContent = 'Erro: ' + e.message;
+  }catch(e){
+    resumo.innerHTML=`<div class='loading' style='color:var(--red)'>❌ Erro ao buscar dados: ${e.message}</div>`;
+    saida.textContent='Erro: '+e.message;
   }
 }
 </script>
