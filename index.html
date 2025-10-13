@@ -2,69 +2,171 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Consulta Cupons Mercatto</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<title>Mercatto • Consulta de Cupons</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@600&display=swap" rel="stylesheet">
 <style>
-  :root { 
-    --bg:#0b1220;
-    --ink:#e5f0ff;
-    --muted:#a8b3c7;
-    --teal:#06b6d4;
-    --red:#ef4444;
-    --green:#16a34a;
-  }
-  body{
-    margin:0;background:var(--bg);color:var(--ink);
-    font-family:'Inter',system-ui;padding:20px;
-  }
-  h1{text-align:center;margin-bottom:20px;color:var(--teal);}
-  .controls{text-align:center;margin-bottom:20px;}
-  input,button,select{
-    padding:8px 10px;margin:4px;border-radius:6px;
-    border:none;font-size:14px;
-  }
-  button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
-  select{background:#101827;color:var(--ink);}
-  #layout{
-    display:flex;gap:40px;align-items:flex-start;justify-content:center;
-  }
-  #resumo{
-    width:45%;white-space:pre-wrap;line-height:1.5;font-size:14px;
-    background:#101827;padding:15px;border-radius:10px;
-    overflow:auto;max-height:80vh;
-  }
-  #saida{
-    flex:1;background:#111a2e;padding:20px;border-radius:8px;
-    overflow:auto;font-size:12px;color:#00ffaa;
-    max-height:80vh;
-  }
-  table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;}
-  th,td{border-bottom:1px solid #1f2937;padding:6px;text-align:left;}
-  th{color:var(--teal);}
-  tr:hover{background:#182237;}
-  .total{font-weight:700;color:var(--green);}
-  @media(max-width:900px){#layout{flex-direction:column}#resumo{width:100%}}
+:root {
+  --bg: #060b1a;
+  --panel: #0e172d;
+  --ink: #e5f0ff;
+  --muted: #94a3b8;
+  --accent: #06b6d4;
+  --accent-glow: 0 0 10px #06b6d4aa;
+  --green: #16a34a;
+  --red: #ef4444;
+  --radius: 12px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0;
+  background: radial-gradient(circle at top, #081226, #020617);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+header {
+  text-align: center;
+  padding: 25px 10px 10px;
+}
+header h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  color: var(--accent);
+  text-shadow: var(--accent-glow);
+  margin-bottom: 8px;
+}
+header span {
+  font-size: 0.9rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px auto;
+}
+input, select, button {
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid #1e293b;
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+input:focus, select:focus, button:hover {
+  border-color: var(--accent);
+  box-shadow: var(--accent-glow);
+  outline: none;
+}
+button {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+#layout {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px;
+}
+.card {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: 0 0 20px #0005;
+  padding: 15px;
+  flex: 1;
+  min-width: 340px;
+  max-height: 80vh;
+  overflow: auto;
+  transition: 0.3s ease;
+}
+.card:hover { box-shadow: 0 0 25px #06b6d440; }
+#resumo h2 {
+  text-align: center;
+  font-size: 1rem;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #1e293b;
+}
+th {
+  text-align: left;
+  color: var(--accent);
+}
+tr:hover {
+  background: #111b34;
+}
+.total {
+  font-weight: bold;
+  color: var(--green);
+}
+#headerResumo {
+  background: linear-gradient(90deg, #06b6d4, #0ea5e9);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 10px;
+}
+.loading {
+  text-align: center;
+  color: var(--accent);
+  font-weight: 500;
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+pre {
+  background: #030712;
+  color: #0ff;
+  padding: 15px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  overflow: auto;
+}
+@media(max-width:900px) {
+  #layout { flex-direction: column; }
+}
 </style>
 </head>
 <body>
-  <h1>Consulta Cupons Fiscais – Mercatto</h1>
+<header>
+  <h1>Consulta de Cupons – Mercatto</h1>
+  <span>Sistema Integrado de Vendas</span>
+</header>
 
-  <div class="controls">
-    <select id="empresa">
-      <option value="VAREJO_URL_DELICIA">MERCATTO DELÍCIA</option>
-      <option value="VAREJO_URL_VILLA">VILLA GOURMET</option>
-      <option value="VAREJO_URL_PADARIA">PADARIA DELÍCIA</option>
-    </select>
-    <input type="date" id="dataInicio">
-    <input type="date" id="dataFim">
-    <button onclick="consultar()">Consultar</button>
-  </div>
+<div class="controls">
+  <select id="empresa">
+    <option value="VAREJO_URL_DELICIA">MERCATTO DELÍCIA</option>
+    <option value="VAREJO_URL_VILLA">VILLA GOURMET</option>
+    <option value="VAREJO_URL_PADARIA">PADARIA DELÍCIA</option>
+    <option value="VAREJO_URL_MERCATTO">VAREJO MERCATTO</option>
+  </select>
+  <input type="date" id="dataInicio">
+  <input type="date" id="dataFim">
+  <button onclick="consultar()">Consultar</button>
+</div>
 
-  <div id="layout">
-    <div id="resumo">Aguardando consulta...</div>
-    <pre id="saida">Aguardando consulta...</pre>
-  </div>
+<div id="layout">
+  <div id="resumo" class="card">Aguardando consulta...</div>
+  <div id="saida" class="card"><span class="loading">⏳ Aguardando consulta...</span></div>
+</div>
 
 <script>
 const formasPagamento=[
@@ -95,50 +197,53 @@ const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 async function consultar(){
   const dataInicio = document.getElementById('dataInicio').value;
   const dataFim    = document.getElementById('dataFim').value;
-  const empresa    = document.getElementById('empresa').value;
-  const saida  = document.getElementById('saida');
+  const empresaSel = document.getElementById('empresa');
+  const empresa    = empresaSel.value;
+  const empresaNome = empresaSel.options[empresaSel.selectedIndex].text;
+
   const resumo = document.getElementById('resumo');
+  const saida  = document.getElementById('saida');
 
-  resumo.textContent = "🔄 Processando...";
-  saida.textContent  = "🔄 Buscando dados...";
+  resumo.innerHTML = `<div class='loading'>🔄 Consultando ${empresaNome}...</div>`;
+  saida.innerHTML  = `<div class='loading'>📡 Acessando base de dados...</div>`;
 
-  try{
-    // Login (enviando nome da empresa)
+  try {
     const loginResp = await fetch('/api/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({empresa})
     });
-    const {accessToken} = await loginResp.json();
+    const loginData = await loginResp.json();
+    const token = loginData.accessToken || loginData.token;
 
-    // Busca de cupons
+    if(!token) throw new Error("Token não retornado pela API.");
+
     const resp = await fetch('/api/recebimentos',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim,empresa})
+      body:JSON.stringify({token,dataInicio,dataFim,empresa})
     });
+
     const raw = await resp.json();
     saida.textContent = JSON.stringify(raw,null,2);
 
     const vendas = raw.items || [];
     if(vendas.length===0){
-      resumo.textContent = "Nenhum cupom encontrado para o período selecionado.";
+      resumo.innerHTML = `<div class='loading'>📭 Nenhum cupom encontrado para ${empresaNome}.</div>`;
       return;
     }
 
-    let tabela = `
+    let tabela = `<div id="headerResumo">📍 ${empresaNome} — ${vendas.length} cupons encontrados</div>
     <table>
       <thead>
         <tr><th>Caixa</th><th>Finalizadora</th><th>Valor Recebido</th><th>Cupom</th></tr>
-      </thead>
-      <tbody>
-    `;
+      </thead><tbody>`;
+
     const totais = {};
     let totalGeral = 0;
 
     for (const v of vendas) {
       if (v.cancelada) continue;
-
       const caixa = v.numeroCaixa || "—";
       const seq   = v.sequencial || v.id || "—";
       const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
@@ -171,21 +276,20 @@ async function consultar(){
         </tr>`;
       });
     }
-
     tabela += "</tbody></table>";
 
-    let totaisHtml = "<h3>💰 Totais por Finalizadora</h3><table><tbody>";
+    let totaisHtml = `<h2>💰 Totais por Finalizadora</h2><table><tbody>`;
     const ordenado = Object.entries(totais).sort((a,b)=>b[1].total - a[1].total);
     for(const [idf, info] of ordenado){
-      totaisHtml += `<tr><td>${idf} - ${info.nome}</td><td class="total">${brl(info.total)}</td></tr>`;
+      totaisHtml += `<tr><td>${idf} - ${info.nome}</td><td class='total'>${brl(info.total)}</td></tr>`;
     }
-    totaisHtml += `<tr><td><b>TOTAL GERAL DO PERÍODO</b></td><td class="total">${brl(totalGeral)}</td></tr></tbody></table>`;
+    totaisHtml += `<tr><td><b>TOTAL GERAL</b></td><td class='total'>${brl(totalGeral)}</td></tr></tbody></table>`;
 
     resumo.innerHTML = tabela + totaisHtml;
 
-  }catch(e){
-    resumo.textContent='❌ Erro ao buscar dados.';
-    saida.textContent='Erro: '+e.message;
+  } catch (e) {
+    resumo.innerHTML = `<div class='loading' style='color:var(--red)'>❌ Erro ao buscar dados: ${e.message}</div>`;
+    saida.textContent = 'Erro: ' + e.message;
   }
 }
 </script>
