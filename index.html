@@ -1,172 +1,339 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>💠 Painel Multilojas – Cupons em Tempo Real</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-:root {
-  --bg:#060b1a; --panel:#0e172d; --ink:#e5f0ff;
-  --muted:#94a3b8; --accent:#06b6d4; --green:#16a34a;
-  --red:#ef4444; --radius:12px; --shadow:0 0 15px #0006;
-}
-*{box-sizing:border-box}
-body{
-  margin:0; background:radial-gradient(circle at top,#081226,#020617);
-  color:var(--ink); font-family:'Inter',sans-serif; overflow-x:hidden;
-}
-header{text-align:center;padding:25px 10px 10px;}
-header h1{font-family:'Orbitron',sans-serif;font-size:1.8rem;color:var(--accent);text-shadow:0 0 10px #06b6d4aa;margin:0;}
-header span{font-size:0.9rem;color:var(--muted);}
-.controls{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:20px auto;}
-input,select,button{
-  background:var(--panel);color:var(--ink);border:1px solid #1e293b;
-  border-radius:var(--radius);padding:10px 12px;font-size:14px;transition:0.2s;
-}
-input:focus,select:focus,button:hover{border-color:var(--accent);box-shadow:0 0 10px #06b6d4aa;outline:none;}
-button{background:var(--accent);color:#fff;font-weight:700;cursor:pointer;}
-#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;padding:10px;max-width:1200px;margin:auto;}
-.card{
-  background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);
-  padding:15px;transition:0.3s;position:relative;
-}
-.card:hover{box-shadow:0 0 25px #06b6d440;}
-.card h2{font-size:1.1rem;margin-bottom:8px;color:var(--accent);}
-.total{font-size:1.5rem;font-weight:700;color:var(--green);}
-.chartBox{position:relative;height:200px;}
-.loading{text-align:center;color:var(--accent);font-weight:500;animation:pulse 1.2s infinite;}
-@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
-.modal{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:#000a;display:none;align-items:center;justify-content:center;
-}
-.modal-content{
-  background:var(--panel);padding:20px;border-radius:var(--radius);
-  max-width:90%;max-height:90%;overflow:auto;box-shadow:var(--shadow);
-}
-.modal-content h3{text-align:center;color:var(--accent);}
-@media(max-width:900px){#painel{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel Cupons Multilojas</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --surface: #10172a;
+      --card: #0f172a;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --line: rgba(148,163,184,.25);
+      --accent: #60a5fa;
+      --shadow: 0 20px 60px rgba(2,6,23,.35);
+      --radius: 12px;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+    }
+    header {
+      padding: 16px;
+      text-align: center;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      color: var(--accent);
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      padding: 12px;
+      background: var(--surface);
+      flex-wrap: wrap;
+    }
+    .controls input[type="date"],
+    .controls button {
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+    }
+    .controls button:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    #panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      padding: 16px;
+    }
+    .empresa-box {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+    .empresa-box h2 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+      color: var(--accent);
+    }
+    .empresa-box .val-total {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+    .empresa-box ul {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 12px;
+    }
+    .empresa-box ul li {
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+    .chart-container {
+      flex: 1;
+      position: relative;
+      height: 220px;
+    }
+    .empresa-box .click-more {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      cursor: pointer;
+    }
+
+    /* Modal estilização simples */
+    .modal {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal.open { display: flex; }
+    .modal-content {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      max-width: 90%;
+      max-height: 90%;
+      overflow-y: auto;
+      color: var(--text);
+    }
+    .modal-content h3 {
+      margin-top: 0;
+      color: var(--accent);
+    }
+    .modal-close {
+      position: absolute;
+      top: 12px; right: 20px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--muted);
+    }
+  </style>
 </head>
 <body>
+
 <header>
-  <h1>💠 Painel Multilojas – Cupons</h1>
-  <span>Monitoramento de Vendas em Tempo Real</span>
+  <h1>Entradas – Cupons Multilojas</h1>
 </header>
 
 <div class="controls">
-  <input type="date" id="dataInicio">
-  <input type="date" id="dataFim">
-  <button onclick="consultarTodas()">🔄 Atualizar</button>
+  <input type="date" id="dataInicio" />
+  <input type="date" id="dataFim" />
+  <button onclick="filtrar()">Filtrar</button>
 </div>
 
-<div id="painel">
-  <div class="loading">⏳ Carregando dados...</div>
+<div id="panel">
+  <div class="empresa-box"><div class="val-total">⏳ Carregando...</div></div>
 </div>
 
+<!-- Modal para dados detalhados / comparação anual -->
 <div id="modal" class="modal" onclick="fecharModal(event)">
-  <div class="modal-content" id="modalContent"></div>
+  <div class="modal-content">
+    <span class="modal-close" onclick="fecharModal(event)">&times;</span>
+    <div id="modal-body"></div>
+  </div>
 </div>
 
 <script>
-const empresas = [
-  { nome:'DELÍCIA GOURMET', key:'VAREJO_URL_DELICIA' },
-  { nome:'VILLA GOURMET', key:'VAREJO_URL_VILLA' },
-  { nome:'PADARIA DELÍCIA', key:'VAREJO_URL_PADARIA' },
-  { nome:'MERCATTO DELÍCIA', key:'VAREJO_URL_MERCATTO' }
-];
-const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const painel = document.getElementById('painel');
-const hoje = new Date();
-document.getElementById('dataInicio').valueAsDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()-1);
-document.getElementById('dataFim').valueAsDate = hoje;
+  const empresas = [
+    { nome: 'CARNEIRO MERCATTO RESTAURANTE', key: 'MERCATTO_RESTAURANTE' },
+    { nome: 'CARNEIRO MERCATTO EMPÓRIO', key: 'MERCATTO_EMPORIO' },
+    { nome: 'DELÍCIA GOURMET', key: 'VAREJO_URL_DELICIA' },
+    { nome: 'PADARIA DELÍCIA', key: 'VAREJO_URL_PADARIA' },
+    { nome: 'VILLA GOURMET', key: 'VAREJO_URL_VILLA' }
+  ];
 
-// 🔹 Função principal: consultar todas as empresas
-async function consultarTodas(){
-  painel.innerHTML = '<div class="loading">🔄 Atualizando dados de todas as empresas...</div>';
-  const di = document.getElementById('dataInicio').value;
-  const df = document.getElementById('dataFim').value;
-  const cards = [];
+  function brl(n) {
+    return Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
 
-  for(const emp of empresas){
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `<h2>${emp.nome}</h2><div class="loading">Carregando...</div>`;
-    painel.appendChild(card);
+  function getHora(v) {
+    // adapta se sua API usar outro campo, ex: v.horaFechamento ou v.dataHoraFechamento
+    if (v.horaFechamento) return v.horaFechamento;
+    if (v.dataHoraFechamentoCupom) {
+      const dt = new Date(v.dataHoraFechamentoCupom);
+      return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0');
+    }
+    return v.hora || '';
+  }
 
-    try{
-      const login = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.key})});
-      const dataLogin = await login.json();
-      const token = dataLogin.accessToken || dataLogin.token;
-      if(!token) throw new Error('Token não retornado.');
+  function inAlmoco(horaStr) {
+    // considera horário entre 05:00 e 16:00 como almoço
+    const [hh, mm] = horaStr.split(':').map(Number);
+    if (hh === undefined) return false;
+    const totalMin = hh * 60 + (mm || 0);
+    return totalMin >= 5 * 60 && totalMin <= 16 * 60;
+  }
 
-      const resp = await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:di,dataFim:df,empresa:emp.key})});
-      const data = await resp.json();
-      const vendas = Array.isArray(data.items)?data.items:[];
+  async function filtrar() {
+    const di = document.getElementById('dataInicio').value;
+    const df = document.getElementById('dataFim').value;
+    const panel = document.getElementById('panel');
+    panel.innerHTML = '';
+    for (const emp of empresas) {
+      const box = document.createElement('div');
+      box.className = 'empresa-box';
+      box.innerHTML = `<h2>${emp.nome}</h2><div class="val-total">⏳ Carregando...</div>`;
+      panel.appendChild(box);
+      try {
+        // login para empresa
+        const loginResp = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ empresa: emp.key })
+        });
+        const loginData = await loginResp.json();
+        const token = loginData.accessToken || loginData.token;
+        if (!token) throw new Error('Token não retornado');
 
-      if(vendas.length===0){ card.innerHTML=`<h2>${emp.nome}</h2><div class='loading'>📭 Nenhum cupom encontrado.</div>`; continue; }
+        const resp = await fetch('/api/recebimentos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, dataInicio: di, dataFim: df, empresa: emp.key })
+        });
+        const raw = await resp.json();
+        const vendas = raw.items || [];
 
-      let total=0, cancel=0;
-      vendas.forEach(v=>{
-        if(v.cancelada) cancel++;
-        else total += Number(v.valor||v.valorTotal||0);
-      });
-      const percentCancel = ((cancel/vendas.length)*100).toFixed(1);
+        // Se for Mercatto, dividir por caixa para Empório / Restaurante
+        let vendasEmporio = [];
+        let vendasRestaurante = [];
+        if (emp.nome.includes('MERCATTO')) {
+          vendas.forEach(v => {
+            const caixa = v.numeroCaixa || v.caixa || ''; // ajustar campo conforme API
+            if (['1','2','3','4','5'].includes(String(caixa))) {
+              vendasEmporio.push(v);
+            } else {
+              vendasRestaurante.push(v);
+            }
+          });
+        }
 
-      // Render resumo e gráfico
-      card.innerHTML = `
-        <h2>${emp.nome}</h2>
-        <div>Total Vendido</div>
-        <div class="total">${brl(total)}</div>
-        <canvas id="chart_${emp.key}" class="chartBox"></canvas>
-        <div style="text-align:center;color:var(--muted);font-size:0.8rem;">Cancelados: ${cancel} (${percentCancel}%)</div>
-      `;
-      desenharGrafico(emp.key, vendas);
+        let targetVendas = vendas;
+        // montar dois cards caso Mercatto
+        if (emp.nome.includes('MERCATTO')) {
+          // Empório
+          renderEmpresaBox(box, emp.nome + ' EMPÓRIO', vendasEmporio, false);
+          // Restaurante
+          const box2 = document.createElement('div');
+          box2.className = 'empresa-box';
+          panel.appendChild(box2);
+          renderEmpresaBox(box2, emp.nome + ' RESTAURANTE', vendasRestaurante, true);
+        } else {
+          renderEmpresaBox(box, emp.nome, vendas, true);
+        }
 
-      card.onclick = ()=>abrirModal(emp.nome, vendas);
-    }catch(e){
-      card.innerHTML = `<h2>${emp.nome}</h2><div class='loading' style='color:var(--red)'>❌ Erro: ${e.message}</div>`;
+      } catch (e) {
+        box.innerHTML = `<h2>${emp.nome}</h2><div class="val-total" style="color:var(--accent)">${e.message}</div>`;
+      }
     }
   }
-}
 
-// 🔹 Gera gráfico simples por empresa
-function desenharGrafico(key, vendas){
-  const ctx = document.getElementById('chart_'+key);
-  if(!ctx) return;
-  const dias = {};
-  vendas.forEach(v=>{
-    const d = (v.dataVenda||v.data||'').slice(0,10);
-    if(!dias[d]) dias[d]=0;
-    if(!v.cancelada) dias[d]+=Number(v.valor||v.valorTotal||0);
+  function renderEmpresaBox(box, nome, vendas, mostrarAlmoco) {
+    // cálculo total, categorias, almoço etc
+    let total = 0;
+    let totalAlmoco = 0;
+    const catMap = {};
+
+    vendas.forEach(v => {
+      if (v.cancelada) return;
+      const val = Number(v.valor || v.valorTotal || 0);
+      total += val;
+
+      const hora = getHora(v);
+      if (mostrarAlmoco && inAlmoco(hora)) {
+        totalAlmoco += val;
+      }
+
+      const finals = v.finalizacoes || [];
+      finals.forEach(f => {
+        const idf = f.finalizadoraId || '';
+        const nomeF = f.descricao || idf;
+        catMap[nomeF] = (catMap[nomeF] || 0) + Number(f.valor || 0);
+      });
+    });
+
+    const percentCancel = ((vendas.filter(v => v.cancelada).length / vendas.length) * 100).toFixed(1);
+
+    // montar HTML
+    let html = `<h2>${nome}</h2>
+      <div class="val-total">${brl(total)}</div>`;
+    html += `<ul>`;
+    for (const [k, v] of Object.entries(catMap)) {
+      html += `<li>${k}: ${brl(v)}</li>`;
+    }
+    html += `</ul>`;
+    if (mostrarAlmoco) {
+      html += `<div>🍽️ Almoço: ${brl(totalAlmoco)}</div>`;
+    }
+    html += `<div class="chart-container"><canvas></canvas></div>`;
+    html += `<div class="click-more">Clique para ver evolução anual</div>`;
+
+    box.innerHTML = html;
+
+    // desenhar gráfico
+    const ctx = box.querySelector('canvas');
+    const labels = Object.keys(catMap);
+    const data = Object.values(catMap);
+    new Chart(ctx, {
+      type: 'bar',
+      data: { labels, datasets: [ { data, backgroundColor: labels.map((_,i)=> `hsl(${i*40},70%,50%)`) } ] },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    box.querySelector('.click-more').onclick = () => abrirModal(nome, vendas);
+  }
+
+  function abrirModal(nome, vendas) {
+    const modal = document.getElementById('modal');
+    const body = document.getElementById('modal-body');
+    body.innerHTML = `<h3>${nome}</h3>
+      <pre style="white-space:pre-wrap; color:var(--text);">${JSON.stringify(vendas,null,2)}</pre>`;
+    modal.classList.add('open');
+  }
+
+  function fecharModal(e) {
+    if (e.target.id === 'modal' || e.target.classList.contains('modal-close')) {
+      document.getElementById('modal').classList.remove('open');
+    }
+  }
+
+  // inicializa com filtros padrão (por exemplo ontem)
+  document.addEventListener('DOMContentLoaded', () => {
+    const hoje = new Date();
+    const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
+    document.getElementById('dataInicio').value = ontem.toISOString().substring(0,10);
+    document.getElementById('dataFim').value = hoje.toISOString().substring(0,10);
+    filtrar();
   });
-  const labels = Object.keys(dias);
-  const valores = Object.values(dias);
-  new Chart(ctx,{
-    type:'bar',
-    data:{labels,datasets:[{label:'Vendas Diárias',data:valores,backgroundColor:'#06b6d4'}]},
-    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}
-  });
-}
-
-// 🔹 Modal detalhado com JSON formatado
-function abrirModal(nome,vendas){
-  const modal=document.getElementById('modal');
-  const conteudo=document.getElementById('modalContent');
-  const total=vendas.filter(v=>!v.cancelada).reduce((a,b)=>a+Number(b.valor||b.valorTotal||0),0);
-  conteudo.innerHTML=`
-    <h3>${nome}</h3>
-    <p><b>Total:</b> ${brl(total)} | <b>Cupons:</b> ${vendas.length}</p>
-    <pre style="white-space:pre-wrap;font-size:12px;background:#111b34;padding:10px;border-radius:10px;max-height:60vh;overflow:auto;">
-${JSON.stringify(vendas.slice(0,10),null,2)}\n... (${vendas.length} registros)
-    </pre>`;
-  modal.style.display='flex';
-}
-function fecharModal(e){ if(e.target.id==='modal') e.currentTarget.style.display='none'; }
-
-consultarTodas();
 </script>
+
 </body>
 </html>
