@@ -2,315 +2,171 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mercatto • Consulta de Cupons</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>💠 Painel Multilojas – Cupons em Tempo Real</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Orbitron:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root {
-  --bg: #060b1a;
-  --panel: #0e172d;
-  --ink: #e5f0ff;
-  --muted: #94a3b8;
-  --accent: #06b6d4;
-  --accent-glow: 0 0 10px #06b6d4aa;
-  --green: #16a34a;
-  --red: #ef4444;
-  --radius: 12px;
+  --bg:#060b1a; --panel:#0e172d; --ink:#e5f0ff;
+  --muted:#94a3b8; --accent:#06b6d4; --green:#16a34a;
+  --red:#ef4444; --radius:12px; --shadow:0 0 15px #0006;
 }
-* { box-sizing: border-box; }
-body {
-  margin: 0; padding: 0;
-  background: radial-gradient(circle at top, #081226, #020617);
-  color: var(--ink);
-  font-family: 'Inter', sans-serif;
-  overflow-x: hidden;
+*{box-sizing:border-box}
+body{
+  margin:0; background:radial-gradient(circle at top,#081226,#020617);
+  color:var(--ink); font-family:'Inter',sans-serif; overflow-x:hidden;
 }
-header {
-  text-align: center;
-  padding: 25px 10px 10px;
+header{text-align:center;padding:25px 10px 10px;}
+header h1{font-family:'Orbitron',sans-serif;font-size:1.8rem;color:var(--accent);text-shadow:0 0 10px #06b6d4aa;margin:0;}
+header span{font-size:0.9rem;color:var(--muted);}
+.controls{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:20px auto;}
+input,select,button{
+  background:var(--panel);color:var(--ink);border:1px solid #1e293b;
+  border-radius:var(--radius);padding:10px 12px;font-size:14px;transition:0.2s;
 }
-header h1 {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.8rem;
-  color: var(--accent);
-  text-shadow: var(--accent-glow);
-  margin-bottom: 8px;
+input:focus,select:focus,button:hover{border-color:var(--accent);box-shadow:0 0 10px #06b6d4aa;outline:none;}
+button{background:var(--accent);color:#fff;font-weight:700;cursor:pointer;}
+#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;padding:10px;max-width:1200px;margin:auto;}
+.card{
+  background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:15px;transition:0.3s;position:relative;
 }
-header span {
-  font-size: 0.9rem;
-  color: var(--muted);
-  letter-spacing: 1px;
+.card:hover{box-shadow:0 0 25px #06b6d440;}
+.card h2{font-size:1.1rem;margin-bottom:8px;color:var(--accent);}
+.total{font-size:1.5rem;font-weight:700;color:var(--green);}
+.chartBox{position:relative;height:200px;}
+.loading{text-align:center;color:var(--accent);font-weight:500;animation:pulse 1.2s infinite;}
+@keyframes pulse{0%,100%{opacity:.6}50%{opacity:1}}
+.modal{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:#000a;display:none;align-items:center;justify-content:center;
 }
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin: 20px auto;
+.modal-content{
+  background:var(--panel);padding:20px;border-radius:var(--radius);
+  max-width:90%;max-height:90%;overflow:auto;box-shadow:var(--shadow);
 }
-input, select, button {
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid #1e293b;
-  border-radius: var(--radius);
-  padding: 10px 12px;
-  font-size: 14px;
-  transition: 0.2s ease;
-}
-input:focus, select:focus, button:hover {
-  border-color: var(--accent);
-  box-shadow: var(--accent-glow);
-  outline: none;
-}
-button {
-  background: var(--accent);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-#layout {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
-  padding: 10px;
-}
-.card {
-  background: var(--panel);
-  border-radius: var(--radius);
-  box-shadow: 0 0 20px #0005;
-  padding: 15px;
-  flex: 1;
-  min-width: 340px;
-  max-height: 80vh;
-  overflow: auto;
-  transition: 0.3s ease;
-}
-.card:hover { box-shadow: 0 0 25px #06b6d440; }
-#resumo h2 {
-  text-align: center;
-  font-size: 1rem;
-  margin-bottom: 10px;
-  color: var(--accent);
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-th, td {
-  padding: 8px;
-  border-bottom: 1px solid #1e293b;
-}
-th { text-align: left; color: var(--accent); }
-tr:hover { background: #111b34; }
-.total { font-weight: bold; color: var(--green); }
-#headerResumo {
-  background: linear-gradient(90deg, #06b6d4, #0ea5e9);
-  border-radius: var(--radius);
-  padding: 10px;
-  text-align: center;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 10px;
-}
-.indicadores {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 15px;
-  text-align: center;
-}
-.indicador {
-  background: #111b34;
-  padding: 8px 14px;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
-}
-.indicador.cancelado { color: var(--red); }
-.indicador.vendido { color: var(--green); }
-.loading {
-  text-align: center;
-  color: var(--accent);
-  font-weight: 500;
-  animation: pulse 1.2s infinite;
-}
-@keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
-@media(max-width:900px){#layout{flex-direction:column}}
+.modal-content h3{text-align:center;color:var(--accent);}
+@media(max-width:900px){#painel{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
-  <h1>Consulta de Cupons – Mercatto</h1>
-  <span>Sistema Integrado de Vendas</span>
+  <h1>💠 Painel Multilojas – Cupons</h1>
+  <span>Monitoramento de Vendas em Tempo Real</span>
 </header>
 
 <div class="controls">
-  <select id="empresa" onchange="mostrarFinalizadoras()">
-    <option value="VAREJO_URL_DELICIA">MERCATTO DELÍCIA</option>
-    <option value="VAREJO_URL_VILLA">VILLA GOURMET</option>
-    <option value="VAREJO_URL_PADARIA">PADARIA DELÍCIA</option>
-    <option value="VAREJO_URL_MERCATTO">VAREJO MERCATTO</option>
-  </select>
   <input type="date" id="dataInicio">
   <input type="date" id="dataFim">
-  <button onclick="consultar()">Consultar</button>
+  <button onclick="consultarTodas()">🔄 Atualizar</button>
 </div>
 
-<div id="layout">
-  <div id="resumo" class="card">Aguardando consulta...</div>
-  <div id="saida" class="card"><span class="loading">⏳ Aguardando consulta...</span></div>
+<div id="painel">
+  <div class="loading">⏳ Carregando dados...</div>
+</div>
+
+<div id="modal" class="modal" onclick="fecharModal(event)">
+  <div class="modal-content" id="modalContent"></div>
 </div>
 
 <script>
-// 🔹 Finalizadoras específicas por empresa
-const finalizadorasPorEmpresa = {
-  "VAREJO_URL_DELICIA": [
-    { id: "1", descricao: "DINHEIRO" },
-    { id: "4", descricao: "PIX CNPJ" },
-    { id: "15", descricao: "PIX QRCODE POS" },
-    { id: "17", descricao: "CARTÃO CRÉDITO POS" },
-    { id: "18", descricao: "CARTÃO DÉBITO POS" },
-    { id: "32", descricao: "PAGAMENTO ONLINE" }
-  ],
-"VAREJO_URL_VILLA": [
-  { id: "1", descricao: "DINHEIRO" },
-  { id: "2", descricao: "CARTAO DE DEBITO" },
-  { id: "3", descricao: "CARTAO DE CREDITO" },
-  { id: "4", descricao: "CREDIARIO CLIENTES" },
-  { id: "5", descricao: "CONSUMO FUNCIONARIOS" },
-  { id: "6", descricao: "VOUCHER" },
-  { id: "11", descricao: "TRANSFERENCIA BANCAR" },
-  { id: "12", descricao: "PIX" },
-  { id: "17", descricao: "CATALOGO DELIVERY" },
-  { id: "18", descricao: "CART CREDITO POS" },
-  { id: "19", descricao: "CART DEBITO POS" },
-  { id: "20", descricao: "PIX ITAU" },
-  { id: "22", descricao: "PIX POS" },
-  { id: "23", descricao: "VOUCHER POS" },
-  { id: "24", descricao: "BONIFICACAO" },
-  { id: "25", descricao: "CONSUMO SOCIO" },
-  { id: "26", descricao: "ERROS GARCONS" },
-  { id: "27", descricao: "BONIFICACAO GERENCIA" }
-],
-
-"VAREJO_URL_PADARIA": [
-  { id: "1", descricao: "DINHEIRO" },
-  { id: "2", descricao: "CARTAO DE CREDITO" },
-  { id: "3", descricao: "CARTAO DE DEBITO" },
-  { id: "4", descricao: "PIX" },
-  { id: "5", descricao: "BOLETO" },
-  { id: "6", descricao: "CONSUMO FUNCIONARIOS" },
-  { id: "8", descricao: "CARTAO VOUCHER" },
-  { id: "10", descricao: "CREDITO DELIVERY" },
-  { id: "11", descricao: "DEBITO DELIVERY" },
-  { id: "12", descricao: "PIX OFFLINE" },
-  { id: "13", descricao: "PAGAMENTO ONLINE" },
-  { id: "14", descricao: "CONSUMO SOCIO" },
-  { id: "15", descricao: "VOUCHER POS" },
-  { id: "", descricao: "SEM FATURAMENTO" }
-],
-
-  "VAREJO_URL_MERCATTO": [
-    { id: "1", descricao: "DINHEIRO" },
-    { id: "2", descricao: "CARTÃO CRÉDITO TEF" },
-    { id: "3", descricao: "CARTÃO DÉBITO TEF" },
-    { id: "4", descricao: "PIX CNPJ" },
-    { id: "15", descricao: "PIX QRCODE POS" },
-    { id: "17", descricao: "CRÉDITO POS" },
-    { id: "18", descricao: "DÉBITO POS" }
-  ]
-};
-
-// Função para exibir as finalizadoras da empresa selecionada
-function mostrarFinalizadoras() {
-  const empresa = document.getElementById("empresa").value;
-  const lista = finalizadorasPorEmpresa[empresa] || [];
-  let txt = "💳 Finalizadoras Ativas:\n";
-  lista.forEach(f => txt += `• [${f.id}] ${f.descricao}\n`);
-  alert(txt);
-}
-
+const empresas = [
+  { nome:'DELÍCIA GOURMET', key:'VAREJO_URL_DELICIA' },
+  { nome:'VILLA GOURMET', key:'VAREJO_URL_VILLA' },
+  { nome:'PADARIA DELÍCIA', key:'VAREJO_URL_PADARIA' },
+  { nome:'MERCATTO DELÍCIA', key:'VAREJO_URL_MERCATTO' }
+];
 const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const painel = document.getElementById('painel');
+const hoje = new Date();
+document.getElementById('dataInicio').valueAsDate = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()-1);
+document.getElementById('dataFim').valueAsDate = hoje;
 
-async function consultar(){
-  const dataInicio=document.getElementById('dataInicio').value;
-  const dataFim=document.getElementById('dataFim').value;
-  const empresaSel=document.getElementById('empresa');
-  const empresa=empresaSel.value;
-  const empresaNome=empresaSel.options[empresaSel.selectedIndex].text;
-  const formasPagamento = finalizadorasPorEmpresa[empresa] || [];
+// 🔹 Função principal: consultar todas as empresas
+async function consultarTodas(){
+  painel.innerHTML = '<div class="loading">🔄 Atualizando dados de todas as empresas...</div>';
+  const di = document.getElementById('dataInicio').value;
+  const df = document.getElementById('dataFim').value;
+  const cards = [];
 
-  const resumo=document.getElementById('resumo');
-  const saida=document.getElementById('saida');
-  resumo.innerHTML=`<div class='loading'>🔄 Consultando ${empresaNome}...</div>`;
-  saida.innerHTML=`<div class='loading'>📡 Acessando base de dados...</div>`;
+  for(const emp of empresas){
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `<h2>${emp.nome}</h2><div class="loading">Carregando...</div>`;
+    painel.appendChild(card);
 
-  try{
-    const loginResp=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa})});
-    const loginData=await loginResp.json();
-    const token=loginData.accessToken||loginData.token;
-    if(!token) throw new Error("Token não retornado pela API.");
+    try{
+      const login = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.key})});
+      const dataLogin = await login.json();
+      const token = dataLogin.accessToken || dataLogin.token;
+      if(!token) throw new Error('Token não retornado.');
 
-    const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio,dataFim,empresa})});
-    const raw=await resp.json();
-    saida.textContent=JSON.stringify(raw,null,2);
+      const resp = await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:di,dataFim:df,empresa:emp.key})});
+      const data = await resp.json();
+      const vendas = Array.isArray(data.items)?data.items:[];
 
-    const vendas=raw.items||[];
-    if(vendas.length===0){
-      resumo.innerHTML=`<div class='loading'>📭 Nenhum cupom encontrado para ${empresaNome}.</div>`;
-      return;
-    }
+      if(vendas.length===0){ card.innerHTML=`<h2>${emp.nome}</h2><div class='loading'>📭 Nenhum cupom encontrado.</div>`; continue; }
 
-    let tabela=`<div id="headerResumo">📍 ${empresaNome} — ${vendas.length} cupons encontrados</div>`;
-    let cancelados=0, validos=0;
-    let totalGeral=0;
-    const totais={};
-
-    for(const v of vendas){
-      if(v.cancelada){ cancelados++; continue; }
-      validos++;
-      const fins=Array.isArray(v.finalizacoes)?v.finalizacoes:[];
-      if(fins.length===0) continue;
-
-      const acrescimo=Number(v.acrescimo||0);
-      const desconto=Number(v.desconto||0);
-      const trocoCupom=(fins.reduce((acc,f)=>acc+Number(f.troco||0),0))||0;
-      const trocoDoa=Number(v.trocoDoacao||0);
-      const descMoeda=Number(v.descontoMoeda||0);
-      const ajuste=(acrescimo - desconto - trocoCupom - trocoDoa - descMoeda)/fins.length;
-
-      fins.forEach(f=>{
-        const idf=String(f.finalizadoraId??"?").replace(/^0+/,"");
-        const forma=formasPagamento.find(fp=>fp.id==idf);
-        const nome=forma?forma.descricao:`❌ Desconhecida (${idf})`;
-        const valorBase=Number(f.valor||0);
-        const valorFinal=valorBase+ajuste;
-        if(!totais[idf]) totais[idf]={nome,total:0};
-        totais[idf].total+=valorFinal;
-        totalGeral+=valorFinal;
+      let total=0, cancel=0;
+      vendas.forEach(v=>{
+        if(v.cancelada) cancel++;
+        else total += Number(v.valor||v.valorTotal||0);
       });
+      const percentCancel = ((cancel/vendas.length)*100).toFixed(1);
+
+      // Render resumo e gráfico
+      card.innerHTML = `
+        <h2>${emp.nome}</h2>
+        <div>Total Vendido</div>
+        <div class="total">${brl(total)}</div>
+        <canvas id="chart_${emp.key}" class="chartBox"></canvas>
+        <div style="text-align:center;color:var(--muted);font-size:0.8rem;">Cancelados: ${cancel} (${percentCancel}%)</div>
+      `;
+      desenharGrafico(emp.key, vendas);
+
+      card.onclick = ()=>abrirModal(emp.nome, vendas);
+    }catch(e){
+      card.innerHTML = `<h2>${emp.nome}</h2><div class='loading' style='color:var(--red)'>❌ Erro: ${e.message}</div>`;
     }
-
-    const percentCancel=(cancelados/vendas.length*100).toFixed(1);
-    tabela+=`
-      <div class="indicadores">
-        <div class="indicador vendido">✅ Válidos: <b>${validos}</b></div>
-        <div class="indicador cancelado">❌ Cancelados: <b>${cancelados}</b> (${percentCancel}%)</div>
-      </div>`;
-
-    let totaisHtml=`<h2>💰 Totais por Finalizadora</h2><table><tbody>`;
-    const ordenado=Object.entries(totais).sort((a,b)=>b[1].total-a[1].total);
-    for(const [idf,info] of ordenado){
-      totaisHtml+=`<tr><td>${idf} - ${info.nome}</td><td class='total'>${brl(info.total)}</td></tr>`;
-    }
-    totaisHtml+=`<tr><td><b>TOTAL REAL VENDIDO</b></td><td class='total'>${brl(totalGeral)}</td></tr></tbody></table>`;
-    resumo.innerHTML=tabela+totaisHtml;
-
-  }catch(e){
-    resumo.innerHTML=`<div class='loading' style='color:var(--red)'>❌ Erro: ${e.message}</div>`;
-    saida.textContent='Erro: '+e.message;
   }
 }
+
+// 🔹 Gera gráfico simples por empresa
+function desenharGrafico(key, vendas){
+  const ctx = document.getElementById('chart_'+key);
+  if(!ctx) return;
+  const dias = {};
+  vendas.forEach(v=>{
+    const d = (v.dataVenda||v.data||'').slice(0,10);
+    if(!dias[d]) dias[d]=0;
+    if(!v.cancelada) dias[d]+=Number(v.valor||v.valorTotal||0);
+  });
+  const labels = Object.keys(dias);
+  const valores = Object.values(dias);
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{label:'Vendas Diárias',data:valores,backgroundColor:'#06b6d4'}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8'}},y:{ticks:{color:'#94a3b8'}}}}
+  });
+}
+
+// 🔹 Modal detalhado com JSON formatado
+function abrirModal(nome,vendas){
+  const modal=document.getElementById('modal');
+  const conteudo=document.getElementById('modalContent');
+  const total=vendas.filter(v=>!v.cancelada).reduce((a,b)=>a+Number(b.valor||b.valorTotal||0),0);
+  conteudo.innerHTML=`
+    <h3>${nome}</h3>
+    <p><b>Total:</b> ${brl(total)} | <b>Cupons:</b> ${vendas.length}</p>
+    <pre style="white-space:pre-wrap;font-size:12px;background:#111b34;padding:10px;border-radius:10px;max-height:60vh;overflow:auto;">
+${JSON.stringify(vendas.slice(0,10),null,2)}\n... (${vendas.length} registros)
+    </pre>`;
+  modal.style.display='flex';
+}
+function fecharModal(e){ if(e.target.id==='modal') e.currentTarget.style.display='none'; }
+
+consultarTodas();
 </script>
 </body>
 </html>
