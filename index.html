@@ -1,339 +1,248 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Cupons Multilojas</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg: #0b1020;
-      --surface: #10172a;
-      --card: #0f172a;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --line: rgba(148,163,184,.25);
-      --accent: #60a5fa;
-      --shadow: 0 20px 60px rgba(2,6,23,.35);
-      --radius: 12px;
-    }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-    }
-    header {
-      padding: 16px;
-      text-align: center;
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      color: var(--accent);
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      padding: 12px;
-      background: var(--surface);
-      flex-wrap: wrap;
-    }
-    .controls input[type="date"],
-    .controls button {
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--text);
-    }
-    .controls button:hover {
-      background: var(--accent);
-      color: #fff;
-    }
-    #panel {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-      padding: 16px;
-    }
-    .empresa-box {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-    }
-    .empresa-box h2 {
-      margin: 0 0 8px;
-      font-size: 1.2rem;
-      color: var(--accent);
-    }
-    .empresa-box .val-total {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-    .empresa-box ul {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 12px;
-    }
-    .empresa-box ul li {
-      margin-bottom: 6px;
-      color: var(--muted);
-    }
-    .chart-container {
-      flex: 1;
-      position: relative;
-      height: 220px;
-    }
-    .empresa-box .click-more {
-      margin-top: 8px;
-      font-size: 0.85rem;
-      color: var(--muted);
-      text-align: center;
-      cursor: pointer;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Resumo de Entradas - Mercatto e Filiais</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    /* Modal estilização simples */
-    .modal {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal.open { display: flex; }
-    .modal-content {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 20px;
-      max-width: 90%;
-      max-height: 90%;
-      overflow-y: auto;
-      color: var(--text);
-    }
-    .modal-content h3 {
-      margin-top: 0;
-      color: var(--accent);
-    }
-    .modal-close {
-      position: absolute;
-      top: 12px; right: 20px;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--muted);
-    }
-  </style>
+<style>
+:root {
+  --bg:#0b1020;--surface:#10172a;--card:#0f172a;
+  --text:#e5e7eb;--muted:#94a3b8;--line:rgba(148,163,184,.25);
+  --accent:#22d3ee;--accent2:#60a5fa;
+  --shadow:0 20px 60px rgba(2,6,23,.35);
+  --radius:12px;
+}
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif;}
+body{margin:0;background:var(--bg);color:var(--text);}
+header{
+  text-align:center;padding:20px 10px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  color:var(--accent2);font-weight:800;font-size:1.3rem;
+  box-shadow:0 2px 10px #0006;
+}
+.controls{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);
+}
+.controls input,.controls button{
+  background:var(--card);color:var(--text);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:8px 12px;font-weight:600;
+}
+.controls button:hover{background:var(--accent);color:#fff;cursor:pointer;}
+#painel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+  gap:18px;padding:20px;max-width:1400px;margin:auto;
+}
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;transition:.3s;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 0 20px #06b6d440;}
+.card h2{margin:0 0 10px;color:var(--accent2);font-size:1rem;text-transform:uppercase;}
+.valor{font-size:1.6rem;font-weight:800;margin-bottom:8px;}
+ul{list-style:none;margin:0;padding:0;font-size:.9rem;color:var(--muted);}
+ul li{margin-bottom:5px;}
+.almoco{
+  margin-top:8px;padding:8px;border:1px dashed var(--line);
+  border-radius:8px;font-size:.9rem;color:var(--muted);
+}
+.chart{margin-top:10px;height:240px;position:relative;}
+.loading{text-align:center;color:var(--accent);margin-top:40px;font-weight:600;}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 30px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loading{
+  position:fixed;inset:0;background:rgba(2,6,23,.75);
+  display:none;align-items:center;justify-content:center;z-index:3000;
+}
+#loading.show{display:flex;}
+.spinner{width:46px;height:46px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.25);border-top-color:#fff;
+  animation:spin 1s linear infinite;margin:0 auto 10px;
+}
+</style>
 </head>
 <body>
 
-<header>
-  <h1>Entradas – Cupons Multilojas</h1>
-</header>
+<header>📊 Painel de Entradas — Mercatto e Filiais</header>
 
 <div class="controls">
-  <input type="date" id="dataInicio" />
-  <input type="date" id="dataFim" />
-  <button onclick="filtrar()">Filtrar</button>
+  <input type="date" id="dataInicio">
+  <input type="date" id="dataFim">
+  <button onclick="carregar()">🔍 Consultar</button>
+  <button onclick="exportarPDF()">📄 PDF</button>
+  <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
 </div>
 
-<div id="panel">
-  <div class="empresa-box"><div class="val-total">⏳ Carregando...</div></div>
-</div>
+<div id="painel"><div class="loading">Carregando dados...</div></div>
 
-<!-- Modal para dados detalhados / comparação anual -->
-<div id="modal" class="modal" onclick="fecharModal(event)">
-  <div class="modal-content">
-    <span class="modal-close" onclick="fecharModal(event)">&times;</span>
-    <div id="modal-body"></div>
+<div id="loading">
+  <div>
+    <div class="spinner"></div>
+    <div class="loading-text">Carregando dados da API...</div>
   </div>
 </div>
 
+<footer>Desenvolvido para Grupo Mercatto & Delícia • © 2025</footer>
+
 <script>
-  const empresas = [
-    { nome: 'CARNEIRO MERCATTO RESTAURANTE', key: 'MERCATTO_RESTAURANTE' },
-    { nome: 'CARNEIRO MERCATTO EMPÓRIO', key: 'MERCATTO_EMPORIO' },
-    { nome: 'DELÍCIA GOURMET', key: 'VAREJO_URL_DELICIA' },
-    { nome: 'PADARIA DELÍCIA', key: 'VAREJO_URL_PADARIA' },
-    { nome: 'VILLA GOURMET', key: 'VAREJO_URL_VILLA' }
-  ];
+const empresas = [
+  { nome:'MERCATTO', key:'VAREJO_URL_MERCATTO', tipo:'MERCATTO' },
+  { nome:'DELÍCIA GOURMET', key:'VAREJO_URL_DELICIA' },
+  { nome:'PADARIA DELÍCIA', key:'VAREJO_URL_PADARIA' },
+  { nome:'VILLA GOURMET', key:'VAREJO_URL_VILLA' }
+];
 
-  function brl(n) {
-    return Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
+const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const isAlmoco = hora => {
+  if(!hora) return false;
+  const [h,m]=hora.split(':').map(Number);
+  const total=h*60+(m||0);
+  return total>=300 && total<=960; // 05h até 16h
+};
+function showLoading(){document.getElementById('loading').classList.add('show');}
+function hideLoading(){document.getElementById('loading').classList.remove('show');}
 
-  function getHora(v) {
-    // adapta se sua API usar outro campo, ex: v.horaFechamento ou v.dataHoraFechamento
-    if (v.horaFechamento) return v.horaFechamento;
-    if (v.dataHoraFechamentoCupom) {
-      const dt = new Date(v.dataHoraFechamentoCupom);
-      return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0');
-    }
-    return v.hora || '';
-  }
+async function carregar(){
+  const painel=document.getElementById('painel');
+  painel.innerHTML='<div class="loading">🔄 Buscando dados...</div>';
+  showLoading();
+  const di=document.getElementById('dataInicio').value;
+  const df=document.getElementById('dataFim').value;
+  const cards=[];
 
-  function inAlmoco(horaStr) {
-    // considera horário entre 05:00 e 16:00 como almoço
-    const [hh, mm] = horaStr.split(':').map(Number);
-    if (hh === undefined) return false;
-    const totalMin = hh * 60 + (mm || 0);
-    return totalMin >= 5 * 60 && totalMin <= 16 * 60;
-  }
+  for(const emp of empresas){
+    try{
+      const loginResp=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.key})});
+      const loginData=await loginResp.json();
+      const token=loginData.accessToken||loginData.token;
+      if(!token) throw new Error('Falha no login da API.');
 
-  async function filtrar() {
-    const di = document.getElementById('dataInicio').value;
-    const df = document.getElementById('dataFim').value;
-    const panel = document.getElementById('panel');
-    panel.innerHTML = '';
-    for (const emp of empresas) {
-      const box = document.createElement('div');
-      box.className = 'empresa-box';
-      box.innerHTML = `<h2>${emp.nome}</h2><div class="val-total">⏳ Carregando...</div>`;
-      panel.appendChild(box);
-      try {
-        // login para empresa
-        const loginResp = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ empresa: emp.key })
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:di,dataFim:df,empresa:emp.key})});
+      const raw=await resp.json();
+      const vendas=raw.items||[];
+
+      if(emp.tipo==='MERCATTO'){
+        const emporio=vendas.filter(v=>{
+          const cx=String(v.caixa||v.numeroCaixa||'');
+          return ['1','2','3','4','5'].includes(cx);
         });
-        const loginData = await loginResp.json();
-        const token = loginData.accessToken || loginData.token;
-        if (!token) throw new Error('Token não retornado');
-
-        const resp = await fetch('/api/recebimentos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, dataInicio: di, dataFim: df, empresa: emp.key })
+        const rest=vendas.filter(v=>{
+          const cx=String(v.caixa||v.numeroCaixa||'');
+          return !['1','2','3','4','5'].includes(cx);
         });
-        const raw = await resp.json();
-        const vendas = raw.items || [];
-
-        // Se for Mercatto, dividir por caixa para Empório / Restaurante
-        let vendasEmporio = [];
-        let vendasRestaurante = [];
-        if (emp.nome.includes('MERCATTO')) {
-          vendas.forEach(v => {
-            const caixa = v.numeroCaixa || v.caixa || ''; // ajustar campo conforme API
-            if (['1','2','3','4','5'].includes(String(caixa))) {
-              vendasEmporio.push(v);
-            } else {
-              vendasRestaurante.push(v);
-            }
-          });
-        }
-
-        let targetVendas = vendas;
-        // montar dois cards caso Mercatto
-        if (emp.nome.includes('MERCATTO')) {
-          // Empório
-          renderEmpresaBox(box, emp.nome + ' EMPÓRIO', vendasEmporio, false);
-          // Restaurante
-          const box2 = document.createElement('div');
-          box2.className = 'empresa-box';
-          panel.appendChild(box2);
-          renderEmpresaBox(box2, emp.nome + ' RESTAURANTE', vendasRestaurante, true);
-        } else {
-          renderEmpresaBox(box, emp.nome, vendas, true);
-        }
-
-      } catch (e) {
-        box.innerHTML = `<h2>${emp.nome}</h2><div class="val-total" style="color:var(--accent)">${e.message}</div>`;
+        cards.push(gerarCard('CARNEIRO MERCATTO EMPÓRIO',emporio,false));
+        cards.push(gerarCard('CARNEIRO MERCATTO RESTAURANTE',rest,true));
+      }else{
+        cards.push(gerarCard(emp.nome,vendas,true));
       }
+    }catch(e){
+      cards.push(`<div class="card"><h2>${emp.nome}</h2><div style="color:#f87171">❌ ${e.message}</div></div>`);
     }
   }
 
-  function renderEmpresaBox(box, nome, vendas, mostrarAlmoco) {
-    // cálculo total, categorias, almoço etc
-    let total = 0;
-    let totalAlmoco = 0;
-    const catMap = {};
+  painel.innerHTML=cards.join('');
+  desenharGraficos();
+  hideLoading();
+}
 
-    vendas.forEach(v => {
-      if (v.cancelada) return;
-      const val = Number(v.valor || v.valorTotal || 0);
-      total += val;
-
-      const hora = getHora(v);
-      if (mostrarAlmoco && inAlmoco(hora)) {
-        totalAlmoco += val;
-      }
-
-      const finals = v.finalizacoes || [];
-      finals.forEach(f => {
-        const idf = f.finalizadoraId || '';
-        const nomeF = f.descricao || idf;
-        catMap[nomeF] = (catMap[nomeF] || 0) + Number(f.valor || 0);
-      });
+function gerarCard(nome,vendas,comAlmoco){
+  let total=0, totalAlmoco=0, cancelados=0, validos=0;
+  const formas={};
+  vendas.forEach(v=>{
+    const val=Number(v.valor||v.valorTotal||0);
+    const hora=v.horaFechamento||v.hora||'';
+    if(v.cancelada){cancelados++;return;}
+    validos++;
+    total+=val;
+    if(comAlmoco && isAlmoco(hora)) totalAlmoco+=val;
+    (v.finalizacoes||[]).forEach(f=>{
+      const nomeF=f.descricao||f.nome||'Outros';
+      formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
     });
-
-    const percentCancel = ((vendas.filter(v => v.cancelada).length / vendas.length) * 100).toFixed(1);
-
-    // montar HTML
-    let html = `<h2>${nome}</h2>
-      <div class="val-total">${brl(total)}</div>`;
-    html += `<ul>`;
-    for (const [k, v] of Object.entries(catMap)) {
-      html += `<li>${k}: ${brl(v)}</li>`;
-    }
-    html += `</ul>`;
-    if (mostrarAlmoco) {
-      html += `<div>🍽️ Almoço: ${brl(totalAlmoco)}</div>`;
-    }
-    html += `<div class="chart-container"><canvas></canvas></div>`;
-    html += `<div class="click-more">Clique para ver evolução anual</div>`;
-
-    box.innerHTML = html;
-
-    // desenhar gráfico
-    const ctx = box.querySelector('canvas');
-    const labels = Object.keys(catMap);
-    const data = Object.values(catMap);
-    new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [ { data, backgroundColor: labels.map((_,i)=> `hsl(${i*40},70%,50%)`) } ] },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } }
-      }
-    });
-
-    box.querySelector('.click-more').onclick = () => abrirModal(nome, vendas);
-  }
-
-  function abrirModal(nome, vendas) {
-    const modal = document.getElementById('modal');
-    const body = document.getElementById('modal-body');
-    body.innerHTML = `<h3>${nome}</h3>
-      <pre style="white-space:pre-wrap; color:var(--text);">${JSON.stringify(vendas,null,2)}</pre>`;
-    modal.classList.add('open');
-  }
-
-  function fecharModal(e) {
-    if (e.target.id === 'modal' || e.target.classList.contains('modal-close')) {
-      document.getElementById('modal').classList.remove('open');
-    }
-  }
-
-  // inicializa com filtros padrão (por exemplo ontem)
-  document.addEventListener('DOMContentLoaded', () => {
-    const hoje = new Date();
-    const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
-    document.getElementById('dataInicio').value = ontem.toISOString().substring(0,10);
-    document.getElementById('dataFim').value = hoje.toISOString().substring(0,10);
-    filtrar();
   });
-</script>
 
+  let html=`<div class="card">
+  <h2>${nome}</h2>
+  <div class="valor">${brl(total)}</div>
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <span style="color:#22c55e;">✅ Válidos: ${validos}</span>
+    <span style="color:#ef4444;">❌ Cancelados: ${cancelados}</span>
+  </div>
+  <ul>`;
+  Object.entries(formas).forEach(([k,v])=>html+=`<li>${k}: ${brl(v)}</li>`);
+  html+=`</ul>`;
+  if(comAlmoco) html+=`<div class="almoco">🍽️ Valor de Almoço (05h–16h): <b>${brl(totalAlmoco)}</b></div>`;
+  html+=`<div class="chart"><canvas></canvas></div></div>`;
+  return html;
+}
+
+function desenharGraficos(){
+  document.querySelectorAll('.chart').forEach(ch=>{
+    const ctx=ch.querySelector('canvas');
+    const ul=ch.parentElement.querySelector('ul');
+    const labels=[...ul.querySelectorAll('li')].map(li=>li.textContent.split(':')[0]);
+    const vals=[...ul.querySelectorAll('li')].map(li=>{
+      const val=li.textContent.split('R$')[1]||'0';
+      return Number(val.replace('.','').replace(',','.'));
+    });
+    new Chart(ctx,{
+      type:'bar',
+      data:{labels,datasets:[{data:vals,backgroundColor:labels.map((_,i)=>`hsl(${i*50},70%,55%)`)}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa'}}}}
+    });
+  });
+}
+
+function exportarPDF(){
+  const boxes=document.querySelectorAll(".card");
+  boxes.forEach((box,i)=>{
+    const wrapper=document.createElement("div");
+    wrapper.style.width="1200px";wrapper.style.padding="40px";wrapper.style.background="#fff";
+    wrapper.style.color="#111";wrapper.style.fontFamily="Arial,sans-serif";
+    const logo=document.createElement("h1");logo.innerText="Resumo Financeiro — Grupo Mercatto";logo.style.textAlign="center";
+    wrapper.appendChild(logo);
+    const clone=box.cloneNode(true);clone.style.color="#000";clone.style.pageBreakAfter="always";
+    wrapper.appendChild(clone);
+    html2pdf().from(wrapper).set({margin:0,filename:`resumo-${i+1}.pdf`,
+      image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:'px',format:[1200,800],orientation:'landscape'}}).save();
+  });
+}
+
+function enviarWhatsapp(){
+  const boxes=document.querySelectorAll(".card");
+  const hoje=new Date();
+  const di=document.getElementById("dataInicio").value;
+  const df=document.getElementById("dataFim").value;
+  function fData(x){const [y,m,d]=x.split('-');return`${d}/${m}/${y}`;}
+  const periodo=(di===df)?fData(di):`${fData(di)} a ${fData(df)}`;
+  let msg=`📊 *Resumo Financeiro — ${periodo}*\n\n`;
+  boxes.forEach(b=>{
+    const titulo=b.querySelector("h2").innerText;
+    const total=b.querySelector(".valor").innerText;
+    msg+=`*${titulo}*\nTotal: ${total}\n`;
+    b.querySelectorAll("li").forEach(li=>msg+=`• ${li.innerText}\n`);
+    const alm=b.querySelector(".almoco");
+    if(alm) msg+=`${alm.innerText}\n`;
+    msg+="\n";
+  });
+  const numero="5577999761436";
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,"_blank");
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const hoje=new Date();
+  const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  document.getElementById('dataInicio').value=ontem.toISOString().substring(0,10);
+  document.getElementById('dataFim').value=hoje.toISOString().substring(0,10);
+  carregar();
+});
+</script>
 </body>
 </html>
