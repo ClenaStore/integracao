@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Resumo Financeiro — Grupo Mercatto</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Resumo de Entradas - Mercatto e Filiais</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -12,216 +12,237 @@
 :root {
   --bg:#0b1020;--surface:#10172a;--card:#0f172a;
   --text:#e5e7eb;--muted:#94a3b8;--line:rgba(148,163,184,.25);
-  --accent:#22d3ee;--accent2:#60a5fa;--radius:12px;--shadow:0 20px 60px rgba(2,6,23,.35);
-  --warn:#f87171;
+  --accent:#22d3ee;--accent2:#60a5fa;
+  --shadow:0 20px 60px rgba(2,6,23,.35);
+  --radius:12px;
 }
-[data-theme="light"]{
-  --bg:#f6f7fb;--surface:#ffffff;--card:#ffffff;--text:#0f172a;
-  --muted:#475569;--line:#e5e7eb;--shadow:0 16px 36px rgba(15,23,42,.08);
-  --warn:#dc2626;
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif;}
+body{margin:0;background:var(--bg);color:var(--text);}
+header{
+  text-align:center;padding:20px 10px;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  color:var(--accent2);font-weight:800;font-size:1.3rem;
+  box-shadow:0 2px 10px #0006;
 }
-*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
-header{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);z-index:20}
-.head{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;max-width:1200px;margin:auto}
-.title{font-weight:800;color:var(--accent2);font-size:1.3rem}
-.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;padding:10px;border-bottom:1px solid var(--line);background:var(--surface)}
-.controls button{border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:700;background:var(--card);color:var(--text)}
-.controls button:hover{background:var(--accent);color:#fff;cursor:pointer}
-.filtros{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;padding:12px;background:var(--surface);border-bottom:1px solid var(--line)}
-.filtros input{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
-#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;max-width:1400px;margin:auto;padding:20px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);transition:.3s}
-.card:hover{transform:translateY(-2px);box-shadow:0 0 20px #06b6d440}
-.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent2);text-transform:uppercase}
-.valor{font-size:1.5rem;font-weight:800;margin-bottom:6px}
-ul{list-style:none;padding:0;margin:0;color:var(--muted);font-size:.9rem}
-ul li{margin-bottom:4px}
-ul li.desconhecida{color:var(--warn);font-weight:600}
-.almoco{margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}
-.chart{height:240px;margin-top:10px}
-footer{text-align:center;padding:20px;color:var(--muted);font-size:.85rem}
-.loading{text-align:center;margin-top:40px;color:var(--accent);font-weight:700}
-#loading{position:fixed;inset:0;background:rgba(2,6,23,.7);display:none;align-items:center;justify-content:center;z-index:2000;color:#fff}
-#loading.show{display:flex}
-.spinner{width:46px;height:46px;border-radius:50%;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;animation:spin 1s linear infinite;margin:0 auto 10px}
+.controls{
+  display:flex;gap:10px;justify-content:center;flex-wrap:wrap;
+  background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);
+}
+.controls input,.controls button{
+  background:var(--card);color:var(--text);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:8px 12px;font-weight:600;
+}
+.controls button:hover{background:var(--accent);color:#fff;cursor:pointer;}
+#painel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+  gap:18px;padding:20px;max-width:1400px;margin:auto;
+}
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;transition:.3s;
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 0 20px #06b6d440;}
+.card h2{margin:0 0 10px;color:var(--accent2);font-size:1rem;text-transform:uppercase;}
+.valor{font-size:1.6rem;font-weight:800;margin-bottom:8px;}
+ul{list-style:none;margin:0;padding:0;font-size:.9rem;color:var(--muted);}
+ul li{margin-bottom:5px;}
+.almoco{
+  margin-top:8px;padding:8px;border:1px dashed var(--line);
+  border-radius:8px;font-size:.9rem;color:var(--muted);
+}
+.chart{margin-top:10px;height:240px;position:relative;}
+.loading{text-align:center;color:var(--accent);margin-top:40px;font-weight:600;}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 30px;}
 @keyframes spin{to{transform:rotate(360deg)}}
+#loading{
+  position:fixed;inset:0;background:rgba(2,6,23,.75);
+  display:none;align-items:center;justify-content:center;z-index:3000;
+}
+#loading.show{display:flex;}
+.spinner{width:46px;height:46px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.25);border-top-color:#fff;
+  animation:spin 1s linear infinite;margin:0 auto 10px;
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="head">
-    <div class="title">📊 Painel de Entradas — Grupo Mercatto</div>
-    <button id="themeToggle">🌓</button>
-  </div>
-  <div class="filtros">
-    <label>Data:</label>
-    <input type="date" id="dataFiltro">
-    <button onclick="carregar(true)">🔄 Recarregar</button>
-    <button onclick="exportarPDF()">📄 PDF</button>
-    <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
-  </div>
-</header>
+<header>📊 Painel de Entradas — Mercatto e Filiais</header>
+
+<div class="controls">
+  <input type="date" id="dataInicio">
+  <input type="date" id="dataFim">
+  <button onclick="carregar()">🔍 Consultar</button>
+  <button onclick="exportarPDF()">📄 PDF</button>
+  <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
+</div>
 
 <div id="painel"><div class="loading">Carregando dados...</div></div>
-<div id="loading"><div><div class="spinner"></div><div>Atualizando em segundo plano...</div></div></div>
-<footer>Desenvolvido para Grupo Mercatto & Delícia — © 2025</footer>
+
+<div id="loading">
+  <div>
+    <div class="spinner"></div>
+    <div class="loading-text">Carregando dados da API...</div>
+  </div>
+</div>
+
+<footer>Desenvolvido para Grupo Mercatto & Delícia • © 2025</footer>
 
 <script>
-const empresas=[
- {nome:'MERCATTO',key:'VAREJO_URL_MERCATTO',tipo:'MERCATTO'},
- {nome:'DELÍCIA GOURMET',key:'VAREJO_URL_DELICIA',tipo:'COM_ALMOCO'},
- {nome:'PADARIA DELÍCIA',key:'VAREJO_URL_PADARIA',tipo:'SEM_ALMOCO'},
- {nome:'VILLA GOURMET',key:'VAREJO_URL_VILLA',tipo:'COM_ALMOCO'}
+const empresas = [
+  { nome:'MERCATTO', key:'VAREJO_URL_MERCATTO', tipo:'MERCATTO' },
+  { nome:'DELÍCIA GOURMET', key:'VAREJO_URL_DELICIA' },
+  { nome:'PADARIA DELÍCIA', key:'VAREJO_URL_PADARIA' },
+  { nome:'VILLA GOURMET', key:'VAREJO_URL_VILLA' }
 ];
-const brl=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const isAlmoco=hora=>{if(!hora)return false;const[h,m]=hora.split(':').map(Number);return(h>=5&&(h<16||(h===16&&m===0)))};
-const finalizadorasPorEmpresa={
- "VAREJO_URL_MERCATTO":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CRÉDITO TEF"},{id:"3",descricao:"DÉBITO TEF"},{id:"4",descricao:"PIX CNPJ"},{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},{id:"18",descricao:"DÉBITO POS"}],
- "VAREJO_URL_DELICIA":[{id:"1",descricao:"DINHEIRO"},{id:"4",descricao:"PIX CNPJ"},{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},{id:"18",descricao:"DÉBITO POS"}],
- "VAREJO_URL_PADARIA":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CRÉDITO"},{id:"3",descricao:"DÉBITO"},{id:"4",descricao:"PIX"}],
- "VAREJO_URL_VILLA":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"DÉBITO"},{id:"3",descricao:"CRÉDITO"},{id:"12",descricao:"PIX"},{id:"23",descricao:"VOUCHER POS"}]
+
+const brl = n => (Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const isAlmoco = hora => {
+  if(!hora) return false;
+  const [h,m]=hora.split(':').map(Number);
+  const total=h*60+(m||0);
+  return total>=300 && total<=960; // 05h até 16h
 };
-function showLoading(){document.getElementById('loading').classList.add('show')}
-function hideLoading(){document.getElementById('loading').classList.remove('show')}
+function showLoading(){document.getElementById('loading').classList.add('show');}
+function hideLoading(){document.getElementById('loading').classList.remove('show');}
 
-/* === CARREGAMENTO PRINCIPAL === */
-async function carregar(force=false){
- const painel=document.getElementById('painel');
- painel.innerHTML='';
- const dataSel=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
- showLoading();
- for(const emp of empresas){
-   fetchEmpresa(emp,dataSel).then(res=>renderEmpresa(res));
- }
- hideLoading();
- atualizarHoje();
+async function carregar(){
+  const painel=document.getElementById('painel');
+  painel.innerHTML='<div class="loading">🔄 Buscando dados...</div>';
+  showLoading();
+  const di=document.getElementById('dataInicio').value;
+  const df=document.getElementById('dataFim').value;
+  const cards=[];
+
+  for(const emp of empresas){
+    try{
+      const loginResp=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.key})});
+      const loginData=await loginResp.json();
+      const token=loginData.accessToken||loginData.token;
+      if(!token) throw new Error('Falha no login da API.');
+
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:di,dataFim:df,empresa:emp.key})});
+      const raw=await resp.json();
+      const vendas=raw.items||[];
+
+      if(emp.tipo==='MERCATTO'){
+        const emporio=vendas.filter(v=>{
+          const cx=String(v.caixa||v.numeroCaixa||'');
+          return ['1','2','3','4','5'].includes(cx);
+        });
+        const rest=vendas.filter(v=>{
+          const cx=String(v.caixa||v.numeroCaixa||'');
+          return !['1','2','3','4','5'].includes(cx);
+        });
+        cards.push(gerarCard('CARNEIRO MERCATTO EMPÓRIO',emporio,false));
+        cards.push(gerarCard('CARNEIRO MERCATTO RESTAURANTE',rest,true));
+      }else{
+        cards.push(gerarCard(emp.nome,vendas,true));
+      }
+    }catch(e){
+      cards.push(`<div class="card"><h2>${emp.nome}</h2><div style="color:#f87171">❌ ${e.message}</div></div>`);
+    }
+  }
+
+  painel.innerHTML=cards.join('');
+  desenharGraficos();
+  hideLoading();
 }
 
-/* === BUSCA INDIVIDUAL === */
-async function fetchEmpresa(emp,data){
- try{
-   const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.key})});
-   const token=(await login.json()).accessToken;
-   const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:data,dataFim:data,empresa:emp.key})});
-   const raw=await resp.json();
-   return {empresa:emp,...raw};
- }catch(e){return {empresa:emp,error:e.message}}
+function gerarCard(nome,vendas,comAlmoco){
+  let total=0, totalAlmoco=0, cancelados=0, validos=0;
+  const formas={};
+  vendas.forEach(v=>{
+    const val=Number(v.valor||v.valorTotal||0);
+    const hora=v.horaFechamento||v.hora||'';
+    if(v.cancelada){cancelados++;return;}
+    validos++;
+    total+=val;
+    if(comAlmoco && isAlmoco(hora)) totalAlmoco+=val;
+    (v.finalizacoes||[]).forEach(f=>{
+      const nomeF=f.descricao||f.nome||'Outros';
+      formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
+    });
+  });
+
+  let html=`<div class="card">
+  <h2>${nome}</h2>
+  <div class="valor">${brl(total)}</div>
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <span style="color:#22c55e;">✅ Válidos: ${validos}</span>
+    <span style="color:#ef4444;">❌ Cancelados: ${cancelados}</span>
+  </div>
+  <ul>`;
+  Object.entries(formas).forEach(([k,v])=>html+=`<li>${k}: ${brl(v)}</li>`);
+  html+=`</ul>`;
+  if(comAlmoco) html+=`<div class="almoco">🍽️ Valor de Almoço (05h–16h): <b>${brl(totalAlmoco)}</b></div>`;
+  html+=`<div class="chart"><canvas></canvas></div></div>`;
+  return html;
 }
 
-/* === RENDER === */
-function renderEmpresa(res){
- const painel=document.getElementById('painel');
- if(res.error){painel.insertAdjacentHTML('beforeend',`<div class='card'><h2>${res.empresa.nome}</h2><div style='color:#f87171'>❌ ${res.error}</div></div>`);return}
- const vendas=res.items||[];
- if(res.empresa.tipo==='MERCATTO'){
-   const emp=vendas.filter(v=>['1','2','3','4','5'].includes(String(v.numeroCaixa||v.caixa)));
-   const rest=vendas.filter(v=>!['1','2','3','4','5'].includes(String(v.numeroCaixa||v.caixa)));
-   painel.insertAdjacentHTML('beforeend',gerarCard('CARNEIRO MERCATTO EMPÓRIO',emp,'SEM_ALMOCO','VAREJO_URL_MERCATTO'));
-   painel.insertAdjacentHTML('beforeend',gerarCard('CARNEIRO MERCATTO RESTAURANTE',rest,'COM_ALMOCO','VAREJO_URL_MERCATTO'));
- }else{
-   painel.insertAdjacentHTML('beforeend',gerarCard(res.empresa.nome,vendas,res.empresa.tipo,res.empresa.key));
- }
- desenharGraficos();
-}
-
-/* === ATUALIZAÇÃO HOJE === */
-async function atualizarHoje(){
- const hoje=new Date().toISOString().slice(0,10);
- for(const emp of empresas){
-   fetchEmpresa(emp,hoje).then(r=>{
-     if(r.error)return;
-     if(r.empresa.tipo==='MERCATTO'){
-       const empV=r.items.filter(v=>['1','2','3','4','5'].includes(String(v.numeroCaixa||v.caixa)));
-       const restV=r.items.filter(v=>!['1','2','3','4','5'].includes(String(v.numeroCaixa||v.caixa)));
-       atualizarCard('CARNEIRO MERCATTO EMPÓRIO',empV,'SEM_ALMOCO','VAREJO_URL_MERCATTO');
-       atualizarCard('CARNEIRO MERCATTO RESTAURANTE',restV,'COM_ALMOCO','VAREJO_URL_MERCATTO');
-     }else atualizarCard(r.empresa.nome,r.items||[],r.empresa.tipo,r.empresa.key);
-   });
- }
-}
-
-function atualizarCard(nome,vendas,tipo,key){
- const novo=gerarCard(nome,vendas,tipo,key);
- const old=document.querySelector(`.card[data-nome="${nome}"]`);
- if(old)old.outerHTML=novo;else document.getElementById('painel').insertAdjacentHTML('beforeend',novo);
- desenharGraficos();
-}
-
-/* === GERA CARD === */
-function gerarCard(nome,vendas,tipo,key){
- let total=0,alm=0,cancel=0,val=0;const formas={},map=finalizadorasPorEmpresa[key]||[];
- const desconhecidas=[];
- vendas.forEach(v=>{
-   const valor=Number(v.valor||v.valorTotal||0),hora=v.horaFechamento||v.hora||'';
-   if(v.cancelada){cancel++;return;}val++;total+=valor;
-   if(tipo==='COM_ALMOCO'&&isAlmoco(hora))alm+=valor;
-   (v.finalizacoes||[]).forEach(f=>{
-     const id=String(f.finalizadoraId||''),form=map.find(ff=>ff.id===id);
-     const nomeF=form?`${id} - ${form.descricao}`:`${id} - Desconhecida`;
-     formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
-     if(!form)desconhecidas.push(nomeF);
-   });
- });
- let html=`<div class='card' data-nome="${nome}"><h2>${nome}</h2><div class='valor'>${brl(total)}</div><div style='display:flex;gap:10px;margin-bottom:8px;'><span style='color:#22c55e'>✅ ${val}</span><span style='color:#ef4444'>❌ ${cancel}</span></div><ul>`;
- Object.entries(formas).forEach(([k,v])=>{
-   const classe = k.includes('Desconhecida') ? 'desconhecida' : '';
-   html+=`<li class="${classe}">${k}: ${brl(v)}</li>`;
- });
- html+=`</ul>`;
- if(tipo==='COM_ALMOCO')html+=`<div class='almoco'>🍽️ Almoço (05h–16h): <b>${brl(alm)}</b></div>`;
- if(desconhecidas.length)html+=`<div style='color:var(--warn);margin-top:8px;font-weight:600;'>⚠️ ${desconhecidas.length} finalizadora(s) não catalogada(s)</div>`;
- html+=`<div class='chart'><canvas></canvas></div></div>`;
- return html;
-}
-
-/* === GRAFICOS === */
 function desenharGraficos(){
- document.querySelectorAll('.chart').forEach(ch=>{
-   const ctx=ch.querySelector('canvas');
-   const ul=ch.parentElement.querySelector('ul');
-   const labels=[...ul.querySelectorAll('li')].map(li=>li.textContent.split(':')[0]);
-   const vals=[...ul.querySelectorAll('li')].map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')))];
-   new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:labels.map((_,i)=>`hsl(${i*50},70%,55%)`)}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#999'}},y:{ticks:{color:'#999'}}}}});
- });
+  document.querySelectorAll('.chart').forEach(ch=>{
+    const ctx=ch.querySelector('canvas');
+    const ul=ch.parentElement.querySelector('ul');
+    const labels=[...ul.querySelectorAll('li')].map(li=>li.textContent.split(':')[0]);
+    const vals=[...ul.querySelectorAll('li')].map(li=>{
+      const val=li.textContent.split('R$')[1]||'0';
+      return Number(val.replace('.','').replace(',','.'));
+    });
+    new Chart(ctx,{
+      type:'bar',
+      data:{labels,datasets:[{data:vals,backgroundColor:labels.map((_,i)=>`hsl(${i*50},70%,55%)`)}]},
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa'}}}}
+    });
+  });
 }
 
-/* === PDF === */
 function exportarPDF(){
- const boxes=document.querySelectorAll('.card');
- boxes.forEach((box,i)=>{
-   const wrap=document.createElement('div');
-   wrap.style.width='1200px';wrap.style.padding='40px';wrap.style.background='#fff';wrap.style.color='#111';
-   const title=document.createElement('h1');title.textContent='Resumo Financeiro — Grupo Mercatto';title.style.textAlign='center';wrap.appendChild(title);
-   const clone=box.cloneNode(true);clone.style.color='#000';wrap.appendChild(clone);
-   html2pdf().from(wrap).set({margin:0,filename:`resumo-${i+1}.pdf`,image:{type:'jpeg',quality:1},html2canvas:{scale:2},jsPDF:{unit:'px',format:[1200,800],orientation:'landscape'}}).save();
- });
+  const boxes=document.querySelectorAll(".card");
+  boxes.forEach((box,i)=>{
+    const wrapper=document.createElement("div");
+    wrapper.style.width="1200px";wrapper.style.padding="40px";wrapper.style.background="#fff";
+    wrapper.style.color="#111";wrapper.style.fontFamily="Arial,sans-serif";
+    const logo=document.createElement("h1");logo.innerText="Resumo Financeiro — Grupo Mercatto";logo.style.textAlign="center";
+    wrapper.appendChild(logo);
+    const clone=box.cloneNode(true);clone.style.color="#000";clone.style.pageBreakAfter="always";
+    wrapper.appendChild(clone);
+    html2pdf().from(wrapper).set({margin:0,filename:`resumo-${i+1}.pdf`,
+      image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
+      jsPDF:{unit:'px',format:[1200,800],orientation:'landscape'}}).save();
+  });
 }
 
-/* === WHATSAPP === */
 function enviarWhatsapp(){
- const boxes=document.querySelectorAll('.card');
- const dataSel=document.getElementById('dataFiltro').value;
- const dataBR=dataSel?dataSel.split('-').reverse().join('/'):'Ontem';
- let msg=`📊 *Resumo Financeiro — ${dataBR}*\n\n`;
- boxes.forEach(b=>{
-   const nome=b.querySelector('h2').innerText;
-   const tot=b.querySelector('.valor').innerText;
-   msg+=`*${nome}*\nTotal: ${tot}\n`;
-   b.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
-   const alm=b.querySelector('.almoco');if(alm)msg+=`${alm.innerText}\n`;msg+='\n';
- });
- window.open(`https://wa.me/5577999761436?text=${encodeURIComponent(msg)}`,'_blank');
+  const boxes=document.querySelectorAll(".card");
+  const hoje=new Date();
+  const di=document.getElementById("dataInicio").value;
+  const df=document.getElementById("dataFim").value;
+  function fData(x){const [y,m,d]=x.split('-');return`${d}/${m}/${y}`;}
+  const periodo=(di===df)?fData(di):`${fData(di)} a ${fData(df)}`;
+  let msg=`📊 *Resumo Financeiro — ${periodo}*\n\n`;
+  boxes.forEach(b=>{
+    const titulo=b.querySelector("h2").innerText;
+    const total=b.querySelector(".valor").innerText;
+    msg+=`*${titulo}*\nTotal: ${total}\n`;
+    b.querySelectorAll("li").forEach(li=>msg+=`• ${li.innerText}\n`);
+    const alm=b.querySelector(".almoco");
+    if(alm) msg+=`${alm.innerText}\n`;
+    msg+="\n";
+  });
+  const numero="5577999761436";
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,"_blank");
 }
 
-/* === INIT === */
 document.addEventListener('DOMContentLoaded',()=>{
- const hoje=new Date(),ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
- document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
- carregar();
+  const hoje=new Date();
+  const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  document.getElementById('dataInicio').value=ontem.toISOString().substring(0,10);
+  document.getElementById('dataFim').value=hoje.toISOString().substring(0,10);
+  carregar();
 });
-document.getElementById('themeToggle').onclick=()=>{const cur=document.documentElement.getAttribute('data-theme')||'light';const nxt=cur==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',nxt);localStorage.setItem('dv_theme',nxt)};
 </script>
 </body>
 </html>
