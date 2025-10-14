@@ -8,21 +8,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
 :root {
+  --bg:#f8fafc;--surface:#fff;--card:#fff;
+  --text:#0f172a;--muted:#64748b;--line:#e2e8f0;
+  --accent:#3b82f6;--success:#16a34a;--error:#dc2626;
+  --shadow:0 8px 20px rgba(15,23,42,.08);
+}
+[data-theme="dark"]{
   --bg:#0b1020;--surface:#10172a;--card:#0f172a;
   --text:#e5e7eb;--muted:#94a3b8;--line:rgba(148,163,184,.25);
-  --accent:#22d3ee;--accent2:#60a5fa;--radius:12px;
   --shadow:0 20px 60px rgba(2,6,23,.35);
-}
-[data-theme="light"]{
-  --bg:#f6f7fb;--surface:#fff;--card:#fff;--text:#0f172a;
-  --muted:#475569;--line:#e5e7eb;--shadow:0 16px 36px rgba(15,23,42,.08);
 }
 *{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text)}
-header{position:sticky;top:0;background:color-mix(in srgb,var(--surface) 90%,transparent);
-  backdrop-filter:saturate(160%) blur(6px);border-bottom:1px solid var(--line);
-  padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:50;}
-header img{height:40px}
+header{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;
+  gap:10px;padding:12px 16px;background:var(--surface);
+  border-bottom:1px solid var(--line);box-shadow:var(--shadow);
+}
+header img{height:42px}
 .title{font-weight:800;font-size:clamp(18px,1.6vw,22px)}
 .spacer{flex:1}
 button{cursor:pointer;transition:.2s;background:var(--surface);color:var(--text);
@@ -34,18 +37,21 @@ button:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 label{font-weight:700;font-size:.9rem;color:var(--muted);margin-bottom:4px;display:block}
 input,select{padding:10px;border:1px solid var(--line);border-radius:8px;
   background:var(--surface);color:var(--text);width:100%;font-weight:600}
-#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;position:relative;}
-.card:hover{transform:translateY(-2px);box-shadow:0 0 20px #06b6d440;}
-.card h2{margin:0 0 8px;color:var(--accent2);font-size:1rem;text-transform:uppercase}
+#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);padding:18px;overflow:hidden;position:relative;
+  transition:.3s;min-height:180px;
+}
+.card:hover{transform:translateY(-2px)}
+.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent);text-transform:uppercase}
 .flag{position:absolute;top:12px;right:12px;font-size:20px;opacity:0;transition:.3s;}
-.flag.ok{opacity:1;color:#16a34a;}
-.valor{font-size:1.6rem;font-weight:800;margin-bottom:8px}
-ul{list-style:none;padding:0;margin:0;color:var(--muted)}
+.flag.ok{opacity:1;color:var(--success)}
+.valor{font-size:1.7rem;font-weight:800;margin-bottom:8px}
+ul{list-style:none;padding:0;margin:0;color:var(--muted);font-weight:600;font-size:.9rem}
 li{margin-bottom:5px}
-.desconhecida{color:#ef4444;font-weight:700}
-.chart{margin-top:10px;height:240px}
+.desconhecida{color:var(--error);font-weight:700}
+.chart{margin-top:10px;height:230px}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:.8rem;color:var(--muted)}
 .legend span::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px}
 footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px 0 40px}
@@ -82,134 +88,175 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px 0 40px}
 
 <script>
 const empresas=[
-  {nome:"CARNEIRO MERCATTO RESTAURANTE",chave:"VAREJO_URL_MERCATTO",tipo:"COM_ALMOCO"},
-  {nome:"CARNEIRO MERCATTO EMPÓRIO",chave:"VAREJO_URL_MERCATTO",tipo:"SEM_ALMOCO"},
-  {nome:"DELICIA GOURMET",chave:"VAREJO_URL_DELICIA",tipo:"COM_ALMOCO"},
-  {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA",tipo:"SEM_ALMOCO"},
-  {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA",tipo:"COM_ALMOCO"}
+  {nome:"CARNEIRO MERCATTO RESTAURANTE",chave:"VAREJO_URL_MERCATTO"},
+  {nome:"CARNEIRO MERCATTO EMPÓRIO",chave:"VAREJO_URL_MERCATTO"},
+  {nome:"DELICIA GOURMET",chave:"VAREJO_URL_DELICIA"},
+  {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA"},
+  {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA"}
 ];
-const finalizadoras={
-"VAREJO_URL_MERCATTO":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTÃO CRÉDITO TEF"},{id:"3",descricao:"CARTÃO DÉBITO TEF"},{id:"4",descricao:"PIX CNPJ"},{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},{id:"18",descricao:"DÉBITO POS"}],
-"VAREJO_URL_DELICIA":[{id:"1",descricao:"DINHEIRO"},{id:"4",descricao:"PIX CNPJ"},{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},{id:"18",descricao:"DÉBITO POS"},{id:"32",descricao:"PAGAMENTO ONLINE"}],
-"VAREJO_URL_PADARIA":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTAO DE CREDITO"},{id:"3",descricao:"CARTAO DE DEBITO"},{id:"4",descricao:"PIX"},{id:"5",descricao:"BOLETO"},{id:"6",descricao:"CONSUMO FUNCIONARIOS"},{id:"8",descricao:"CARTAO VOUCHER"},{id:"10",descricao:"CREDITO DELIVERY"},{id:"11",descricao:"DEBITO DELIVERY"},{id:"12",descricao:"PIX OFFLINE"},{id:"13",descricao:"PAGAMENTO ONLINE"},{id:"14",descricao:"CONSUMO SOCIO"},{id:"15",descricao:"VOUCHER POS"}],
-"VAREJO_URL_VILLA":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTAO DE DEBITO"},{id:"3",descricao:"CARTAO DE CREDITO"},{id:"4",descricao:"CREDIARIO CLIENTES"},{id:"5",descricao:"CONSUMO FUNCIONARIOS"},{id:"6",descricao:"VOUCHER"},{id:"11",descricao:"TRANSFERENCIA BANCAR"},{id:"12",descricao:"PIX"},{id:"17",descricao:"CATALOGO DELIVERY"},{id:"18",descricao:"CART CREDITO POS"},{id:"19",descricao:"CART DEBITO POS"},{id:"20",descricao:"PIX ITAU"},{id:"22",descricao:"PIX POS"},{id:"23",descricao:"VOUCHER POS"},{id:"24",descricao:"BONIFICACAO"},{id:"25",descricao:"CONSUMO SOCIO"},{id:"26",descricao:"ERROS GARCONS"},{id:"27",descricao:"BONIFICACAO GERENCIA"}]
+
+// mapeamento de emojis por palavra-chave
+const emojiMap={
+  DINHEIRO:"💵",PIX:"💲",CREDITO:"💳",DÉBITO:"🏦",DEBITO:"🏦",
+  VOUCHER:"🎟️",CONSUMO:"🍽️",BOLETO:"📄",ONLINE:"💻",
+  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",
+  ERROS:"🧯",OUTROS:"📦"
 };
+
 const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-async function carregar(force=false){
- const data=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
- const cacheKey="resumo_"+data;
- const painel=document.getElementById('painel');
- painel.innerHTML="";
- empresas.forEach(e=>{
-   painel.insertAdjacentHTML('beforeend',`
-     <div class="card" id="card_${e.chave}">
-       <div class="flag">✅</div>
-       <h2>${e.nome}</h2>
-       <div class="valor">Carregando...</div>
-       <ul></ul>
-       <div class="chart"><canvas></canvas></div>
-       <div class="legend"></div>
-     </div>
-   `);
- });
-
- const dados=[];
- for(const e of empresas){
-   try{
-     const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:e.chave})});
-     const {accessToken}=await login.json();
-     const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:e.chave,dataInicio:data,dataFim:data})});
-     const json=await resp.json();
-     dados.push({empresa:e,json});
-     atualizarCard(e,json);
-   }catch(err){
-     const c=document.getElementById('card_'+e.chave);
-     c.querySelector('.valor').innerHTML='<span style="color:#ef4444">Erro</span>';
-   }
- }
- localStorage.setItem(cacheKey,JSON.stringify(dados));
+function addCard(empresa){
+  const painel=document.getElementById('painel');
+  painel.insertAdjacentHTML('beforeend',`
+    <div class="card" id="card_${empresa.chave}">
+      <div class="flag">✅</div>
+      <h2>${empresa.nome}</h2>
+      <div class="valor">R$ 0,00</div>
+      <ul><li>Carregando...</li></ul>
+      <div class="chart"><canvas></canvas></div>
+      <div class="legend"></div>
+    </div>`);
 }
 
-function atualizarCard(empresa,json){
- const card=document.getElementById('card_'+empresa.chave);
- const mapFinal=finalizadoras[empresa.chave]||[];
- const itens=json.items||[];
- const formas={};let total=0;
- itens.forEach(v=>{
-   const val=Number(v.valorTotal||0);total+=val;
-   (v.finalizacoes||[]).forEach(f=>{
-     const idF=String(f.finalizadoraId||'');
-     const found=mapFinal.find(ff=>ff.id===idF);
-     const nomeF=found?`${idF} - ${found.descricao}`:`${idF} - NÃO CATALOGADA`;
-     formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
-   });
- });
- card.querySelector('.valor').textContent=brl(total);
- const ul=card.querySelector('ul');
- ul.innerHTML="";
- Object.entries(formas).forEach(([k,v])=>{
-   const li=document.createElement('li');
-   if(k.includes("NÃO CATALOGADA"))li.classList.add('desconhecida');
-   li.textContent=`${k}: ${brl(v)}`;
-   ul.appendChild(li);
- });
- desenharGrafico(card);
- card.querySelector('.flag').classList.add('ok');
+async function carregar(force=false){
+  const data=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const cacheKey="resumo_"+data;
+  const painel=document.getElementById('painel');
+  painel.innerHTML="";
+  empresas.forEach(addCard);
+
+  if(!force && localStorage.getItem(cacheKey)){
+    const dados=JSON.parse(localStorage.getItem(cacheKey));
+    dados.forEach(d=>atualizarCard(d.empresa,d.json));
+    return;
+  }
+
+  const resultados=[];
+  for(const emp of empresas){
+    await carregarEmpresa(emp,data,resultados);
+  }
+  localStorage.setItem(cacheKey,JSON.stringify(resultados));
+}
+
+async function carregarEmpresa(empresa,data,resultados){
+  const card=document.getElementById('card_'+empresa.chave);
+  const valorDiv=card.querySelector('.valor');
+  const ul=card.querySelector('ul');
+  ul.innerHTML="<li>🔄 Fazendo login...</li>";
+  try{
+    const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:empresa.chave})});
+    const {accessToken}=await login.json();
+    ul.innerHTML+="<li>✅ Login ok...</li>";
+    const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:empresa.chave,dataInicio:data,dataFim:data})});
+    const json=await resp.json();
+    resultados.push({empresa,json});
+    ul.innerHTML+="<li>📦 Dados recebidos...</li>";
+    atualizarCard(empresa,json,true);
+    ul.innerHTML+="<li>✅ Finalizado.</li>";
+  }catch(e){
+    ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
+  }
+}
+
+function atualizarCard(empresa,json,animar=false){
+  const card=document.getElementById('card_'+empresa.chave);
+  const ul=card.querySelector('ul');
+  const valorDiv=card.querySelector('.valor');
+  ul.innerHTML="";
+  const itens=json.items||[];
+  const formas={};let total=0;
+  itens.forEach(v=>{
+    const val=Number(v.valorTotal||0);total+=val;
+    (v.finalizacoes||[]).forEach(f=>{
+      const nome=(f.finalizadora||"").toUpperCase();
+      const emo=getEmoji(nome);
+      const key=`${emo} ${nome}`;
+      formas[key]=(formas[key]||0)+Number(f.valor||0);
+    });
+  });
+  animateValue(valorDiv,0,total,1500);
+  Object.entries(formas).forEach(([k,v])=>{
+    const li=document.createElement('li');
+    if(k.includes("NÃO")||k.includes("??"))li.classList.add('desconhecida');
+    li.textContent=`${k}: ${brl(v)}`;
+    ul.appendChild(li);
+  });
+  desenharGrafico(card);
+  card.querySelector('.flag').classList.add('ok');
+}
+
+function getEmoji(nome){
+  const keys=Object.keys(emojiMap);
+  for(const k of keys){
+    if(nome.includes(k)) return emojiMap[k];
+  }
+  return "💠";
+}
+
+function animateValue(el,start,end,duration){
+  const range=end-start;let startTime=null;
+  function step(t){
+    if(!startTime)startTime=t;
+    const progress=Math.min((t-startTime)/duration,1);
+    const value=start+range*progress;
+    el.textContent=brl(value);
+    if(progress<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 function desenharGrafico(card){
- const ctx=card.querySelector('canvas');
- const lis=[...card.querySelectorAll('li')];
- const labels=lis.map(li=>li.textContent.split(':')[0]);
- const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
- const cores=labels.map((_,i)=>`hsl(${i*50},70%,60%)`);
- new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
- options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
- const legend=card.querySelector('.legend');
- legend.innerHTML="";
- labels.forEach((lab,i)=>{
-   const sp=document.createElement('span');
-   sp.style.color=cores[i];
-   sp.textContent=lab;
-   legend.appendChild(sp);
- });
+  const ctx=card.querySelector('canvas');
+  const lis=[...card.querySelectorAll('li')];
+  const labels=lis.map(li=>li.textContent.split(':')[0]);
+  const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
+  const cores=labels.map((_,i)=>`hsl(${i*55},70%,60%)`);
+  new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
+  const legend=card.querySelector('.legend');
+  legend.innerHTML="";
+  labels.forEach((lab,i)=>{
+    const sp=document.createElement('span');
+    sp.style.color=cores[i];
+    sp.textContent=lab;
+    legend.appendChild(sp);
+  });
 }
 
 function exportarPDF(){
- const cards=document.querySelectorAll('.card');
- cards.forEach((c,i)=>{
-   const wrap=document.createElement('div');
-   wrap.style.width='1000px';wrap.style.padding='30px';wrap.style.background='#fff';wrap.style.color='#000';
-   const h=document.createElement('h1');h.textContent='Resumo Financeiro - Grupo DV';h.style.textAlign='center';wrap.appendChild(h);
-   const clone=c.cloneNode(true);wrap.appendChild(clone);
-   html2pdf().from(wrap).set({margin:0,filename:`resumo-${i+1}.pdf`,
-   image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
-   jsPDF:{unit:'px',format:[1000,800],orientation:'landscape'}}).save();
- });
+  const cards=document.querySelectorAll('.card');
+  cards.forEach((c,i)=>{
+    const wrap=document.createElement('div');
+    wrap.style.width='1000px';wrap.style.padding='30px';wrap.style.background='#fff';wrap.style.color='#000';
+    const h=document.createElement('h1');h.textContent='Resumo Financeiro - Grupo DV';h.style.textAlign='center';wrap.appendChild(h);
+    const clone=c.cloneNode(true);wrap.appendChild(clone);
+    html2pdf().from(wrap).set({margin:0,filename:`resumo-${i+1}.pdf`,
+    image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'px',format:[1000,800],orientation:'landscape'}}).save();
+  });
 }
 
 function enviarWhatsapp(){
- const cards=document.querySelectorAll('.card');
- let msg="📊 *Resumo Financeiro - Grupo DV*\n\n";
- cards.forEach(c=>{
-   msg+=`*${c.querySelector('h2').innerText}*\n`;
-   c.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
-   msg+='\n';
- });
- window.open(`https://wa.me/5577999761436?text=${encodeURIComponent(msg)}`,'_blank');
+  const cards=document.querySelectorAll('.card');
+  let msg="📊 *Resumo Financeiro - Grupo DV*\n\n";
+  cards.forEach(c=>{
+    msg+=`*${c.querySelector('h2').innerText}*\n`;
+    c.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
+    msg+='\n';
+  });
+  window.open(`https://wa.me/5577999761436?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
- const hoje=new Date(),ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
- document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
- carregar();
+  const hoje=new Date(),ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
+  carregar();
 });
 document.getElementById('themeToggle').onclick=()=>{
- const cur=document.documentElement.getAttribute('data-theme')||'light';
- const next=cur==='light'?'dark':'light';
- document.documentElement.setAttribute('data-theme',next);
- localStorage.setItem('dv_theme',next);
+  const cur=document.documentElement.getAttribute('data-theme')||'light';
+  const next=cur==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('dv_theme',next);
 };
 </script>
 </body>
