@@ -1,70 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Resumo Financeiro • Grupo DV</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <style>
 :root {
-  --bg:#f8fafc;--surface:#fff;--card:#fff;
-  --text:#0f172a;--muted:#64748b;--line:#e2e8f0;
-  --accent:#3b82f6;--success:#16a34a;--error:#dc2626;
-  --shadow:0 8px 20px rgba(15,23,42,.08);
+  --bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
+  --accent:#2563eb;--success:#16a34a;--error:#dc2626;--radius:14px;
+  --shadow:0 6px 16px rgba(15,23,42,.08);
 }
 [data-theme="dark"]{
-  --bg:#0b1020;--surface:#10172a;--card:#0f172a;
-  --text:#e5e7eb;--muted:#94a3b8;--line:rgba(148,163,184,.25);
-  --shadow:0 20px 60px rgba(2,6,23,.35);
+  --bg:#0b1020;--card:#0f172a;--text:#e5e7eb;--muted:#94a3b8;
+  --line:rgba(148,163,184,.25);--shadow:0 10px 40px rgba(2,6,23,.35);
 }
 *{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text)}
+body{margin:0;background:var(--bg);color:var(--text);transition:.3s background,color;}
 header{
-  position:sticky;top:0;z-index:50;display:flex;align-items:center;
-  gap:10px;padding:12px 16px;background:var(--surface);
-  border-bottom:1px solid var(--line);box-shadow:var(--shadow);
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;
+  padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow);
 }
-header img{height:42px}
+header img{height:40px}
 .title{font-weight:800;font-size:clamp(18px,1.6vw,22px)}
 .spacer{flex:1}
-button{cursor:pointer;transition:.2s;background:var(--surface);color:var(--text);
-  border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-weight:700;}
-button:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
-.conteudo{max-width:1200px;margin:auto;padding:20px}
-.filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:10px;margin-bottom:20px;align-items:end;}
-label{font-weight:700;font-size:.9rem;color:var(--muted);margin-bottom:4px;display:block}
-input,select{padding:10px;border:1px solid var(--line);border-radius:8px;
-  background:var(--surface);color:var(--text);width:100%;font-weight:600}
-#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px}
-.card{
-  background:var(--card);border:1px solid var(--line);border-radius:14px;
-  box-shadow:var(--shadow);padding:18px;overflow:hidden;position:relative;
-  transition:.3s;min-height:180px;
+button{
+  cursor:pointer;border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--card);color:var(--text);padding:8px 14px;font-weight:700;
+  transition:.2s;box-shadow:var(--shadow);
 }
-.card:hover{transform:translateY(-2px)}
-.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent);text-transform:uppercase}
-.flag{position:absolute;top:12px;right:12px;font-size:20px;opacity:0;transition:.3s;}
-.flag.ok{opacity:1;color:var(--success)}
-.valor{font-size:1.7rem;font-weight:800;margin-bottom:8px}
+button:hover{transform:translateY(-2px);background:var(--accent);color:#fff}
+.conteudo{max-width:1200px;margin:auto;padding:20px}
+.filtros{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;margin-bottom:20px;align-items:end;
+}
+label{font-weight:700;font-size:.9rem;color:var(--muted);margin-bottom:4px;display:block}
+input,select{
+  width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--text);font-weight:600;
+}
+#painel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:18px;align-items:start;
+}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;
+  min-height:220px;position:relative;
+}
+.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent)}
+.card .flag{
+  position:absolute;top:10px;right:12px;font-size:20px;color:var(--success);opacity:0;
+  transition:.3s;
+}
+.card.ok .flag{opacity:1}
+.valor{font-size:1.6rem;font-weight:800;margin-bottom:10px}
 ul{list-style:none;padding:0;margin:0;color:var(--muted);font-weight:600;font-size:.9rem}
-li{margin-bottom:5px}
+li{margin-bottom:4px}
 .desconhecida{color:var(--error);font-weight:700}
-.chart{margin-top:10px;height:230px}
+.chart{margin-top:10px;height:200px}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:.8rem;color:var(--muted)}
 .legend span::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px}
-footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px 0 40px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
+#progress{
+  position:fixed;top:0;left:0;height:4px;background:var(--accent);width:0%;
+  transition:width .3s;z-index:9999;
+}
 </style>
 </head>
 <body>
 
 <header>
-  <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true">
-  <div class="title">Resumo de Entradas</div>
+  <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="">
+  <div class="title">Resumo Financeiro</div>
   <div class="spacer"></div>
-  <button id="themeToggle">🌓 Tema</button>
+  <button id="themeToggle">🌓</button>
 </header>
+
+<div id="progress"></div>
 
 <div class="conteudo">
   <div class="filtros">
@@ -95,22 +113,37 @@ const empresas=[
   {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA"}
 ];
 
-// mapeamento de emojis por palavra-chave
 const emojiMap={
   DINHEIRO:"💵",PIX:"💲",CREDITO:"💳",DÉBITO:"🏦",DEBITO:"🏦",
   VOUCHER:"🎟️",CONSUMO:"🍽️",BOLETO:"📄",ONLINE:"💻",
-  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",
-  ERROS:"🧯",OUTROS:"📦"
+  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",ERROS:"🧯",OUTROS:"📦"
 };
 
 const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function getEmoji(nome){
+  const n=nome.toUpperCase();
+  for(const k in emojiMap){ if(n.includes(k)) return emojiMap[k]; }
+  return "💠";
+}
 
-function addCard(empresa){
+function animateValue(el,start,end,duration){
+  const range=end-start;let startTime=null;
+  function step(t){
+    if(!startTime)startTime=t;
+    const progress=Math.min((t-startTime)/duration,1);
+    const val=start+range*progress;
+    el.textContent=brl(val);
+    if(progress<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function addCard(emp){
   const painel=document.getElementById('painel');
   painel.insertAdjacentHTML('beforeend',`
-    <div class="card" id="card_${empresa.chave}">
+    <div class="card" id="card_${emp.chave}">
       <div class="flag">✅</div>
-      <h2>${empresa.nome}</h2>
+      <h2>${emp.nome}</h2>
       <div class="valor">R$ 0,00</div>
       <ul><li>Carregando...</li></ul>
       <div class="chart"><canvas></canvas></div>
@@ -124,44 +157,45 @@ async function carregar(force=false){
   const painel=document.getElementById('painel');
   painel.innerHTML="";
   empresas.forEach(addCard);
+  const progress=document.getElementById('progress');
+  progress.style.width='0%';
 
   if(!force && localStorage.getItem(cacheKey)){
-    const dados=JSON.parse(localStorage.getItem(cacheKey));
-    dados.forEach(d=>atualizarCard(d.empresa,d.json));
+    const cache=JSON.parse(localStorage.getItem(cacheKey));
+    cache.forEach(d=>atualizarCard(d.empresa,d.json));
+    progress.style.width='100%';
     return;
   }
 
-  const resultados=[];
-  for(const emp of empresas){
-    await carregarEmpresa(emp,data,resultados);
-  }
-  localStorage.setItem(cacheKey,JSON.stringify(resultados));
-}
+  const promessas=empresas.map(async(emp)=>{
+    const card=document.getElementById('card_'+emp.chave);
+    const ul=card.querySelector('ul');
+    ul.innerHTML="<li>🔄 Login...</li>";
+    try{
+      const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
+      const {accessToken}=await login.json();
+      ul.innerHTML+="<li>📦 Buscando dados...</li>";
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
+      const json=await resp.json();
+      atualizarCard(emp,json,true);
+      ul.innerHTML+="<li>✅ Finalizado.</li>";
+      return {empresa:emp,json};
+    }catch(e){
+      ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
+      return {empresa:emp,error:e.message};
+    }
+  });
 
-async function carregarEmpresa(empresa,data,resultados){
-  const card=document.getElementById('card_'+empresa.chave);
-  const valorDiv=card.querySelector('.valor');
-  const ul=card.querySelector('ul');
-  ul.innerHTML="<li>🔄 Fazendo login...</li>";
-  try{
-    const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:empresa.chave})});
-    const {accessToken}=await login.json();
-    ul.innerHTML+="<li>✅ Login ok...</li>";
-    const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:empresa.chave,dataInicio:data,dataFim:data})});
-    const json=await resp.json();
-    resultados.push({empresa,json});
-    ul.innerHTML+="<li>📦 Dados recebidos...</li>";
-    atualizarCard(empresa,json,true);
-    ul.innerHTML+="<li>✅ Finalizado.</li>";
-  }catch(e){
-    ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
-  }
+  const results=await Promise.allSettled(promessas);
+  const valid=results.filter(r=>r.value).map(r=>r.value);
+  localStorage.setItem(cacheKey,JSON.stringify(valid));
+  progress.style.width='100%';
 }
 
 function atualizarCard(empresa,json,animar=false){
   const card=document.getElementById('card_'+empresa.chave);
   const ul=card.querySelector('ul');
-  const valorDiv=card.querySelector('.valor');
+  const valorEl=card.querySelector('.valor');
   ul.innerHTML="";
   const itens=json.items||[];
   const formas={};let total=0;
@@ -174,35 +208,15 @@ function atualizarCard(empresa,json,animar=false){
       formas[key]=(formas[key]||0)+Number(f.valor||0);
     });
   });
-  animateValue(valorDiv,0,total,1500);
+  animateValue(valorEl,0,total,1000);
   Object.entries(formas).forEach(([k,v])=>{
     const li=document.createElement('li');
-    if(k.includes("NÃO")||k.includes("??"))li.classList.add('desconhecida');
     li.textContent=`${k}: ${brl(v)}`;
+    if(k.includes("NÃO"))li.classList.add('desconhecida');
     ul.appendChild(li);
   });
   desenharGrafico(card);
-  card.querySelector('.flag').classList.add('ok');
-}
-
-function getEmoji(nome){
-  const keys=Object.keys(emojiMap);
-  for(const k of keys){
-    if(nome.includes(k)) return emojiMap[k];
-  }
-  return "💠";
-}
-
-function animateValue(el,start,end,duration){
-  const range=end-start;let startTime=null;
-  function step(t){
-    if(!startTime)startTime=t;
-    const progress=Math.min((t-startTime)/duration,1);
-    const value=start+range*progress;
-    el.textContent=brl(value);
-    if(progress<1)requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
+  card.classList.add('ok');
 }
 
 function desenharGrafico(card){
@@ -210,9 +224,9 @@ function desenharGrafico(card){
   const lis=[...card.querySelectorAll('li')];
   const labels=lis.map(li=>li.textContent.split(':')[0]);
   const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
-  const cores=labels.map((_,i)=>`hsl(${i*55},70%,60%)`);
+  const cores=labels.map((_,i)=>`hsl(${i*45},70%,55%)`);
   new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
-    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
+  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
   const legend=card.querySelector('.legend');
   legend.innerHTML="";
   labels.forEach((lab,i)=>{
