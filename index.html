@@ -59,12 +59,12 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 30px;
   <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
 </div>
 
-<div id="painel"><div class="loading">Carregando dados...</div></div>
+<div id="painel"><div class="loading">Carregando dados de ontem...</div></div>
 
 <div id="loading">
   <div>
     <div class="spinner"></div>
-    <div class="loading-text">Carregando dados da API...</div>
+    <div class="loading-text">Atualizando dados em segundo plano...</div>
   </div>
 </div>
 
@@ -143,28 +143,42 @@ const finalizadorasPorEmpresa = {
 };
 
 /* ============================
-   FUNÇÃO PRINCIPAL (CARREGAR)
+   FUNÇÃO PRINCIPAL
 ============================ */
 async function carregar(force=false){
   const painel=document.getElementById('painel');
-  painel.innerHTML='<div class="loading">🔄 Carregando dados...</div>';
+  painel.innerHTML='<div class="loading">🔄 Carregando dados de ontem...</div>';
   showLoading();
 
   const hoje=new Date();
   const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
-  const dataInicio=ontem.toISOString().slice(0,10);
-  const dataFim=ontem.toISOString().slice(0,10);
-  const chaveCache=`financeiro_${dataInicio}`;
-
+  const dataOntem=ontem.toISOString().slice(0,10);
+  const dataHoje=hoje.toISOString().slice(0,10);
+  const chaveCache=`financeiro_${dataOntem}`;
   let cache=localStorage.getItem(chaveCache);
+
+  // 1️⃣ Exibe dados de ontem (cache ou busca)
+  let dadosOntem;
   if(!force && cache){
-    const dados=JSON.parse(cache);
-    montarPainel(dados);
+    dadosOntem=JSON.parse(cache);
+    montarPainel(dadosOntem);
     hideLoading();
-    console.log('🗂️ Dados carregados do cache local');
-    return;
+    console.log('🗂️ Dados de ontem do cache local');
+  } else {
+    dadosOntem=await buscarDia(dataOntem);
+    localStorage.setItem(chaveCache,JSON.stringify(dadosOntem));
+    montarPainel(dadosOntem);
+    hideLoading();
   }
 
+  // 2️⃣ Em segundo plano, busca o dia atual e atualiza no painel
+  atualizarHoje(dataHoje);
+}
+
+/* ============================
+   BUSCA DE DADOS POR DIA
+============================ */
+async function buscarDia(data){
   const resultados=[];
   for(const emp of empresas){
     try{
@@ -172,21 +186,40 @@ async function carregar(force=false){
       const loginData=await loginResp.json();
       const token=loginData.accessToken||loginData.token;
       if(!token) throw new Error('Falha no login da API.');
-      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio,dataFim,empresa:emp.key})});
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:data,dataFim:data,empresa:emp.key})});
       const raw=await resp.json();
       resultados.push({empresa:emp,...raw});
     }catch(e){
       resultados.push({empresa:emp,error:e.message});
     }
   }
-
-  localStorage.setItem(chaveCache,JSON.stringify(resultados));
-  montarPainel(resultados);
-  hideLoading();
+  return resultados;
 }
 
 /* ============================
-   MONTAGEM DOS CARDS
+   ATUALIZAÇÃO DO DIA ATUAL (BG)
+============================ */
+async function atualizarHoje(dataHoje){
+  console.log('⏳ Atualizando dados de hoje em segundo plano...');
+  try{
+    const resultadosHoje=await buscarDia(dataHoje);
+    resultadosHoje.forEach(r=>{
+      const nome=r.empresa.nome;
+      const cardExistente=document.querySelector(`.card[data-nome="${nome}"]`);
+      if(cardExistente){
+        const novo=gerarCard(nome,r.items||[],r.empresa.tipo,r.empresa.key);
+        cardExistente.outerHTML=novo;
+      }
+    });
+    desenharGraficos();
+    console.log('✅ Atualização de hoje concluída.');
+  }catch(e){
+    console.warn('⚠️ Falha ao atualizar hoje:',e);
+  }
+}
+
+/* ============================
+   MONTAGEM DE CARDS
 ============================ */
 function montarPainel(resultados){
   const cards=[];
@@ -226,7 +259,7 @@ function gerarCard(nome,vendas,tipo,empresaKey){
       formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
     });
   });
-  let html=`<div class='card'><h2>${nome}</h2>
+  let html=`<div class='card' data-nome="${nome}"><h2>${nome}</h2>
   <div class='valor'>${brl(total)}</div>
   <div style='display:flex;gap:10px;margin-bottom:10px;'>
     <span style='color:#22c55e'>✅ Válidos: ${validos}</span>
@@ -299,9 +332,7 @@ function enviarWhatsapp(){
 /* ============================
    INICIALIZAÇÃO
 ============================ */
-document.addEventListener('DOMContentLoaded',()=>{
-  carregar();
-});
+document.addEventListener('DOMContentLoaded',()=>carregar());
 </script>
 </body>
 </html>
