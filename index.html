@@ -36,9 +36,11 @@ input,select{padding:10px;border:1px solid var(--line);border-radius:8px;
   background:var(--surface);color:var(--text);width:100%;font-weight:600}
 #painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;}
+  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;position:relative;}
 .card:hover{transform:translateY(-2px);box-shadow:0 0 20px #06b6d440;}
 .card h2{margin:0 0 8px;color:var(--accent2);font-size:1rem;text-transform:uppercase}
+.flag{position:absolute;top:12px;right:12px;font-size:20px;opacity:0;transition:.3s;}
+.flag.ok{opacity:1;color:#16a34a;}
 .valor{font-size:1.6rem;font-weight:800;margin-bottom:8px}
 ul{list-style:none;padding:0;margin:0;color:var(--muted)}
 li{margin-bottom:5px}
@@ -47,11 +49,6 @@ li{margin-bottom:5px}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:.8rem;color:var(--muted)}
 .legend span::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px}
 footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px 0 40px}
-#loading{position:fixed;inset:0;background:rgba(2,6,23,.75);display:none;align-items:center;justify-content:center;z-index:999;color:#fff;}
-#loading.show{display:flex;}
-.spinner{width:46px;height:46px;border-radius:50%;border:4px solid rgba(255,255,255,.25);
-  border-top-color:#fff;animation:spin 1s linear infinite;margin-bottom:10px}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -78,10 +75,8 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:20px 0 40px}
     <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
   </div>
 
-  <div id="painel"><p style="text-align:center;color:var(--muted)">Carregando dados...</p></div>
+  <div id="painel"></div>
 </div>
-
-<div id="loading"><div><div class="spinner"></div><p>Carregando dados…</p></div></div>
 
 <footer>© 2025 Grupo DV</footer>
 
@@ -93,181 +88,118 @@ const empresas=[
   {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA",tipo:"SEM_ALMOCO"},
   {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA",tipo:"COM_ALMOCO"}
 ];
-
-// ===== MAPEAMENTO FINALIZADORAS =====
 const finalizadoras={
-"VAREJO_URL_MERCATTO":[
-{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTÃO CRÉDITO TEF"},
-{id:"3",descricao:"CARTÃO DÉBITO TEF"},{id:"4",descricao:"PIX CNPJ"},
-{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},
-{id:"18",descricao:"DÉBITO POS"}],
-"VAREJO_URL_DELICIA":[
-{id:"1",descricao:"DINHEIRO"},{id:"4",descricao:"PIX CNPJ"},
-{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},
-{id:"18",descricao:"DÉBITO POS"},{id:"32",descricao:"PAGAMENTO ONLINE"}],
-  "VAREJO_URL_PADARIA": [
-  { id: "1", descricao: "DINHEIRO" },
-  { id: "2", descricao: "CARTAO DE CREDITO" },
-  { id: "3", descricao: "CARTAO DE DEBITO" },
-  { id: "4", descricao: "PIX" },
-  { id: "5", descricao: "BOLETO" },
-  { id: "6", descricao: "CONSUMO FUNCIONARIOS" },
-  { id: "8", descricao: "CARTAO VOUCHER" },
-  { id: "10", descricao: "CREDITO DELIVERY" },
-  { id: "11", descricao: "DEBITO DELIVERY" },
-  { id: "12", descricao: "PIX OFFLINE" },
-  { id: "13", descricao: "PAGAMENTO ONLINE" },
-  { id: "14", descricao: "CONSUMO SOCIO" },
-  { id: "15", descricao: "VOUCHER POS" },
-  { id: "", descricao: "SEM FATURAMENTO" }
-  ],
-  "VAREJO_URL_VILLA": [
-  { id: "1", descricao: "DINHEIRO" },
-  { id: "2", descricao: "CARTAO DE DEBITO" },
-  { id: "3", descricao: "CARTAO DE CREDITO" },
-  { id: "4", descricao: "CREDIARIO CLIENTES" },
-  { id: "5", descricao: "CONSUMO FUNCIONARIOS" },
-  { id: "6", descricao: "VOUCHER" },
-  { id: "11", descricao: "TRANSFERENCIA BANCAR" },
-  { id: "12", descricao: "PIX" },
-  { id: "17", descricao: "CATALOGO DELIVERY" },
-  { id: "18", descricao: "CART CREDITO POS" },
-  { id: "19", descricao: "CART DEBITO POS" },
-  { id: "20", descricao: "PIX ITAU" },
-  { id: "22", descricao: "PIX POS" },
-  { id: "23", descricao: "VOUCHER POS" },
-  { id: "24", descricao: "BONIFICACAO" },
-  { id: "25", descricao: "CONSUMO SOCIO" },
-  { id: "26", descricao: "ERROS GARCONS" },
-  { id: "27", descricao: "BONIFICACAO GERENCIA" }
-  ]
+"VAREJO_URL_MERCATTO":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTÃO CRÉDITO TEF"},{id:"3",descricao:"CARTÃO DÉBITO TEF"},{id:"4",descricao:"PIX CNPJ"},{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},{id:"18",descricao:"DÉBITO POS"}],
+"VAREJO_URL_DELICIA":[{id:"1",descricao:"DINHEIRO"},{id:"4",descricao:"PIX CNPJ"},{id:"15",descricao:"PIX QRCODE POS"},{id:"17",descricao:"CRÉDITO POS"},{id:"18",descricao:"DÉBITO POS"},{id:"32",descricao:"PAGAMENTO ONLINE"}],
+"VAREJO_URL_PADARIA":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTAO DE CREDITO"},{id:"3",descricao:"CARTAO DE DEBITO"},{id:"4",descricao:"PIX"},{id:"5",descricao:"BOLETO"},{id:"6",descricao:"CONSUMO FUNCIONARIOS"},{id:"8",descricao:"CARTAO VOUCHER"},{id:"10",descricao:"CREDITO DELIVERY"},{id:"11",descricao:"DEBITO DELIVERY"},{id:"12",descricao:"PIX OFFLINE"},{id:"13",descricao:"PAGAMENTO ONLINE"},{id:"14",descricao:"CONSUMO SOCIO"},{id:"15",descricao:"VOUCHER POS"}],
+"VAREJO_URL_VILLA":[{id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTAO DE DEBITO"},{id:"3",descricao:"CARTAO DE CREDITO"},{id:"4",descricao:"CREDIARIO CLIENTES"},{id:"5",descricao:"CONSUMO FUNCIONARIOS"},{id:"6",descricao:"VOUCHER"},{id:"11",descricao:"TRANSFERENCIA BANCAR"},{id:"12",descricao:"PIX"},{id:"17",descricao:"CATALOGO DELIVERY"},{id:"18",descricao:"CART CREDITO POS"},{id:"19",descricao:"CART DEBITO POS"},{id:"20",descricao:"PIX ITAU"},{id:"22",descricao:"PIX POS"},{id:"23",descricao:"VOUCHER POS"},{id:"24",descricao:"BONIFICACAO"},{id:"25",descricao:"CONSUMO SOCIO"},{id:"26",descricao:"ERROS GARCONS"},{id:"27",descricao:"BONIFICACAO GERENCIA"}]
 };
-const brl=n=>(Number(n)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-function showLoading(){document.getElementById('loading').classList.add('show')}
-function hideLoading(){document.getElementById('loading').classList.remove('show')}
+const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
-// ===== PRINCIPAL =====
 async function carregar(force=false){
- showLoading();
  const data=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
  const cacheKey="resumo_"+data;
  const painel=document.getElementById('painel');
- let dados=localStorage.getItem(cacheKey);
- if(dados && !force){
-   dados=JSON.parse(dados);
-   montarPainel(dados);
-   hideLoading();
-   atualizarHoje();
-   return;
- }
-
- let resultados=[];
- for(const emp of empresas){
-   try{
-     const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
-     const {accessToken}=await login.json();
-     const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
-     const json=await resp.json();
-     resultados.push({empresa:emp,json});
-   }catch(e){resultados.push({empresa:emp,error:e.message});}
- }
- localStorage.setItem(cacheKey,JSON.stringify(resultados));
- montarPainel(resultados);
- hideLoading();
- atualizarHoje();
-}
-
-// ===== ATUALIZAÇÃO EM SEGUNDO PLANO =====
-async function atualizarHoje(){
- const hoje=new Date().toISOString().slice(0,10);
- const cacheKey="resumo_"+hoje;
- if(localStorage.getItem(cacheKey))return;
- try{
-   const results=[];
-   for(const emp of empresas){
-     const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
-     const {accessToken}=await login.json();
-     const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:hoje,dataFim:hoje})});
-     const json=await resp.json();
-     results.push({empresa:emp,json});
-   }
-   localStorage.setItem(cacheKey,JSON.stringify(results));
- }catch(e){console.warn("falha atualização hoje",e);}
-}
-
-// ===== MONTAGEM DO PAINEL =====
-function montarPainel(dados){
- const painel=document.getElementById('painel');
  painel.innerHTML="";
- dados.forEach(r=>{
-   if(r.error){painel.innerHTML+=`<div class='card'><h2>${r.empresa.nome}</h2><p style='color:#ef4444'>${r.error}</p></div>`;return;}
-   const itens=r.json.items||[];
-   const formas={};let total=0;
-   const mapFinal=finalizadoras[r.empresa.chave]||[];
-   itens.forEach(v=>{
-     const val=Number(v.valorTotal||0);total+=val;
-     (v.finalizacoes||[]).forEach(f=>{
-       const idF=String(f.finalizadoraId||'');
-       const found=mapFinal.find(ff=>ff.id===idF);
-       const nomeF=found?`${idF} - ${found.descricao}`:`${idF} - NÃO CATALOGADA`;
-       formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
-     });
-   });
-   let html=`<div class='card'><h2>${r.empresa.nome}</h2><div class='valor'>${brl(total)}</div><ul>`;
-   Object.entries(formas).forEach(([k,v])=>{
-     const classe=k.includes("NÃO CATALOGADA")?"desconhecida":"";
-     html+=`<li class="${classe}">${k}: ${brl(v)}</li>`;
-   });
-   html+=`</ul><div class='chart'><canvas></canvas></div><div class='legend'></div></div>`;
-   painel.insertAdjacentHTML('beforeend',html);
+ empresas.forEach(e=>{
+   painel.insertAdjacentHTML('beforeend',`
+     <div class="card" id="card_${e.chave}">
+       <div class="flag">✅</div>
+       <h2>${e.nome}</h2>
+       <div class="valor">Carregando...</div>
+       <ul></ul>
+       <div class="chart"><canvas></canvas></div>
+       <div class="legend"></div>
+     </div>
+   `);
  });
- desenharGraficos();
+
+ const dados=[];
+ for(const e of empresas){
+   try{
+     const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:e.chave})});
+     const {accessToken}=await login.json();
+     const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:e.chave,dataInicio:data,dataFim:data})});
+     const json=await resp.json();
+     dados.push({empresa:e,json});
+     atualizarCard(e,json);
+   }catch(err){
+     const c=document.getElementById('card_'+e.chave);
+     c.querySelector('.valor').innerHTML='<span style="color:#ef4444">Erro</span>';
+   }
+ }
+ localStorage.setItem(cacheKey,JSON.stringify(dados));
 }
 
-// ===== GRÁFICOS =====
-function desenharGraficos(){
- document.querySelectorAll('.card').forEach((c,idx)=>{
-   const ctx=c.querySelector('canvas');
-   const lis=[...c.querySelectorAll('li')];
-   const labels=lis.map(li=>li.textContent.split(':')[0]);
-   const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
-   const cores=labels.map((_,i)=>`hsl(${i*55},70%,60%)`);
-   new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
-   options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
-   const legend=c.querySelector('.legend');
-   labels.forEach((l,i)=>{const sp=document.createElement('span');sp.style.color=cores[i];sp.textContent=l;legend.appendChild(sp)});
+function atualizarCard(empresa,json){
+ const card=document.getElementById('card_'+empresa.chave);
+ const mapFinal=finalizadoras[empresa.chave]||[];
+ const itens=json.items||[];
+ const formas={};let total=0;
+ itens.forEach(v=>{
+   const val=Number(v.valorTotal||0);total+=val;
+   (v.finalizacoes||[]).forEach(f=>{
+     const idF=String(f.finalizadoraId||'');
+     const found=mapFinal.find(ff=>ff.id===idF);
+     const nomeF=found?`${idF} - ${found.descricao}`:`${idF} - NÃO CATALOGADA`;
+     formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
+   });
+ });
+ card.querySelector('.valor').textContent=brl(total);
+ const ul=card.querySelector('ul');
+ ul.innerHTML="";
+ Object.entries(formas).forEach(([k,v])=>{
+   const li=document.createElement('li');
+   if(k.includes("NÃO CATALOGADA"))li.classList.add('desconhecida');
+   li.textContent=`${k}: ${brl(v)}`;
+   ul.appendChild(li);
+ });
+ desenharGrafico(card);
+ card.querySelector('.flag').classList.add('ok');
+}
+
+function desenharGrafico(card){
+ const ctx=card.querySelector('canvas');
+ const lis=[...card.querySelectorAll('li')];
+ const labels=lis.map(li=>li.textContent.split(':')[0]);
+ const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
+ const cores=labels.map((_,i)=>`hsl(${i*50},70%,60%)`);
+ new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
+ options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
+ const legend=card.querySelector('.legend');
+ legend.innerHTML="";
+ labels.forEach((lab,i)=>{
+   const sp=document.createElement('span');
+   sp.style.color=cores[i];
+   sp.textContent=lab;
+   legend.appendChild(sp);
  });
 }
 
-// ===== EXPORTAÇÃO =====
 function exportarPDF(){
- const boxes=document.querySelectorAll('.card');
- boxes.forEach((b,i)=>{
+ const cards=document.querySelectorAll('.card');
+ cards.forEach((c,i)=>{
    const wrap=document.createElement('div');
    wrap.style.width='1000px';wrap.style.padding='30px';wrap.style.background='#fff';wrap.style.color='#000';
    const h=document.createElement('h1');h.textContent='Resumo Financeiro - Grupo DV';h.style.textAlign='center';wrap.appendChild(h);
-   const clone=b.cloneNode(true);clone.style.pageBreakAfter='always';wrap.appendChild(clone);
+   const clone=c.cloneNode(true);wrap.appendChild(clone);
    html2pdf().from(wrap).set({margin:0,filename:`resumo-${i+1}.pdf`,
    image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
    jsPDF:{unit:'px',format:[1000,800],orientation:'landscape'}}).save();
  });
 }
 
-// ===== WHATSAPP =====
 function enviarWhatsapp(){
- const boxes=document.querySelectorAll('.card');
- let msg=`📊 *Resumo Financeiro - Grupo DV*\n\n`;
- boxes.forEach(b=>{
-   msg+=`*${b.querySelector('h2').innerText}*\n`;
-   b.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
+ const cards=document.querySelectorAll('.card');
+ let msg="📊 *Resumo Financeiro - Grupo DV*\n\n";
+ cards.forEach(c=>{
+   msg+=`*${c.querySelector('h2').innerText}*\n`;
+   c.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
    msg+='\n';
  });
  window.open(`https://wa.me/5577999761436?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
-// ===== INICIALIZAÇÃO =====
 document.addEventListener('DOMContentLoaded',()=>{
  const hoje=new Date(),ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
  document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
