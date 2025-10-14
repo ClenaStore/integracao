@@ -11,23 +11,25 @@
 :root {
   --bg:#0b1020;--surface:#10172a;--card:#0f172a;
   --text:#e5e7eb;--muted:#94a3b8;--line:rgba(148,163,184,.25);
-  --accent:#22d3ee;--accent2:#60a5fa;
-  --radius:12px;--shadow:0 20px 60px rgba(2,6,23,.35);
+  --accent:#22d3ee;--accent2:#60a5fa;--radius:12px;
+  --shadow:0 20px 60px rgba(2,6,23,.35);
 }
 *{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif;}
 body{margin:0;background:var(--bg);color:var(--text);}
-header{text-align:center;padding:20px 10px;background:var(--surface);border-bottom:1px solid var(--line);
-  color:var(--accent2);font-weight:800;font-size:1.3rem;box-shadow:0 2px 10px #0006;}
+header{text-align:center;padding:20px 10px;background:var(--surface);
+  border-bottom:1px solid var(--line);color:var(--accent2);font-weight:800;
+  font-size:1.3rem;box-shadow:0 2px 10px #0006;}
 .controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
   background:var(--surface);padding:10px;border-bottom:1px solid var(--line);}
-.controls input,.controls button,select{
-  background:var(--card);color:var(--text);border:1px solid var(--line);
-  border-radius:var(--radius);padding:8px 12px;font-weight:600;
-}
+.controls button{background:var(--card);color:var(--text);
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:8px 12px;font-weight:600;}
 .controls button:hover{background:var(--accent);color:#fff;cursor:pointer;}
-#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;padding:20px;max-width:1400px;margin:auto;}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:.3s;}
+#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+  gap:18px;padding:20px;max-width:1400px;margin:auto;}
+.card{background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;transition:.3s;}
 .card:hover{transform:translateY(-2px);box-shadow:0 0 20px #06b6d440;}
 .card h2{margin:0 0 10px;color:var(--accent2);font-size:1rem;text-transform:uppercase;}
 .valor{font-size:1.6rem;font-weight:800;margin-bottom:8px;}
@@ -41,10 +43,10 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 30px;
 #loading{position:fixed;inset:0;background:rgba(2,6,23,.75);display:none;
   align-items:center;justify-content:center;z-index:3000;}
 #loading.show{display:flex;}
-.spinner{width:46px;height:46px;border-radius:50%;border:4px solid rgba(255,255,255,.25);
-  border-top-color:#fff;animation:spin 1s linear infinite;margin:0 auto 10px;}
+.spinner{width:46px;height:46px;border-radius:50%;
+  border:4px solid rgba(255,255,255,.25);border-top-color:#fff;
+  animation:spin 1s linear infinite;margin:0 auto 10px;}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:900px){#painel{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -52,8 +54,6 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:10px 0 30px;
 <header>📊 Painel de Entradas — Grupo Mercatto</header>
 
 <div class="controls">
-  <input type="date" id="dataInicio">
-  <input type="date" id="dataFim">
   <button onclick="carregar(true)">🔄 Recarregar Dia</button>
   <button onclick="exportarPDF()">📄 PDF</button>
   <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
@@ -105,33 +105,60 @@ const finalizadorasPorEmpresa = {
     {id:"18",descricao:"DÉBITO POS"},{id:"32",descricao:"PAGAMENTO ONLINE"}
   ],
   "VAREJO_URL_PADARIA": [
-    {id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTÃO DE CRÉDITO"},
-    {id:"3",descricao:"CARTÃO DE DÉBITO"},{id:"4",descricao:"PIX"},
-    {id:"5",descricao:"BOLETO"},{id:"14",descricao:"CONSUMO SÓCIO"}
+  { id: "1", descricao: "DINHEIRO" },
+  { id: "2", descricao: "CARTAO DE CREDITO" },
+  { id: "3", descricao: "CARTAO DE DEBITO" },
+  { id: "4", descricao: "PIX" },
+  { id: "5", descricao: "BOLETO" },
+  { id: "6", descricao: "CONSUMO FUNCIONARIOS" },
+  { id: "8", descricao: "CARTAO VOUCHER" },
+  { id: "10", descricao: "CREDITO DELIVERY" },
+  { id: "11", descricao: "DEBITO DELIVERY" },
+  { id: "12", descricao: "PIX OFFLINE" },
+  { id: "13", descricao: "PAGAMENTO ONLINE" },
+  { id: "14", descricao: "CONSUMO SOCIO" },
+  { id: "15", descricao: "VOUCHER POS" },
+  { id: "", descricao: "SEM FATURAMENTO" }
   ],
   "VAREJO_URL_VILLA": [
-    {id:"1",descricao:"DINHEIRO"},{id:"2",descricao:"CARTÃO DE DÉBITO"},
-    {id:"3",descricao:"CARTÃO DE CRÉDITO"},{id:"12",descricao:"PIX"},
-    {id:"23",descricao:"VOUCHER POS"},{id:"25",descricao:"CONSUMO SÓCIO"}
+  { id: "1", descricao: "DINHEIRO" },
+  { id: "2", descricao: "CARTAO DE DEBITO" },
+  { id: "3", descricao: "CARTAO DE CREDITO" },
+  { id: "4", descricao: "CREDIARIO CLIENTES" },
+  { id: "5", descricao: "CONSUMO FUNCIONARIOS" },
+  { id: "6", descricao: "VOUCHER" },
+  { id: "11", descricao: "TRANSFERENCIA BANCAR" },
+  { id: "12", descricao: "PIX" },
+  { id: "17", descricao: "CATALOGO DELIVERY" },
+  { id: "18", descricao: "CART CREDITO POS" },
+  { id: "19", descricao: "CART DEBITO POS" },
+  { id: "20", descricao: "PIX ITAU" },
+  { id: "22", descricao: "PIX POS" },
+  { id: "23", descricao: "VOUCHER POS" },
+  { id: "24", descricao: "BONIFICACAO" },
+  { id: "25", descricao: "CONSUMO SOCIO" },
+  { id: "26", descricao: "ERROS GARCONS" },
+  { id: "27", descricao: "BONIFICACAO GERENCIA" }
   ]
 };
 
 /* ============================
-   CARREGAMENTO E CACHE LOCAL
+   FUNÇÃO PRINCIPAL (CARREGAR)
 ============================ */
 async function carregar(force=false){
   const painel=document.getElementById('painel');
   painel.innerHTML='<div class="loading">🔄 Carregando dados...</div>';
   showLoading();
-  const di=document.getElementById('dataInicio').value;
-  const df=document.getElementById('dataFim').value;
-  const chaveCache=`financeiro_${di}_${df}`;
-  const hoje=new Date().toISOString().slice(0,10);
-  let cache=localStorage.getItem(chaveCache);
-  let dados=null;
 
-  if(!force && cache && di!==hoje){ 
-    dados=JSON.parse(cache);
+  const hoje=new Date();
+  const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  const dataInicio=ontem.toISOString().slice(0,10);
+  const dataFim=ontem.toISOString().slice(0,10);
+  const chaveCache=`financeiro_${dataInicio}`;
+
+  let cache=localStorage.getItem(chaveCache);
+  if(!force && cache){
+    const dados=JSON.parse(cache);
     montarPainel(dados);
     hideLoading();
     console.log('🗂️ Dados carregados do cache local');
@@ -145,25 +172,29 @@ async function carregar(force=false){
       const loginData=await loginResp.json();
       const token=loginData.accessToken||loginData.token;
       if(!token) throw new Error('Falha no login da API.');
-      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio:di,dataFim:df,empresa:emp.key})});
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,dataInicio,dataFim,empresa:emp.key})});
       const raw=await resp.json();
       resultados.push({empresa:emp,...raw});
     }catch(e){
       resultados.push({empresa:emp,error:e.message});
     }
   }
+
   localStorage.setItem(chaveCache,JSON.stringify(resultados));
   montarPainel(resultados);
   hideLoading();
 }
 
 /* ============================
-   MONTAGEM DE CARDS
+   MONTAGEM DOS CARDS
 ============================ */
 function montarPainel(resultados){
   const cards=[];
   for(const res of resultados){
-    if(res.error){cards.push(`<div class='card'><h2>${res.empresa.nome}</h2><div style='color:#f87171'>❌ ${res.error}</div></div>`);continue;}
+    if(res.error){
+      cards.push(`<div class='card'><h2>${res.empresa.nome}</h2><div style='color:#f87171'>❌ ${res.error}</div></div>`);
+      continue;
+    }
     const vendas=res.items||[];
     if(res.empresa.tipo==='MERCATTO'){
       const emporio=vendas.filter(v=>['1','2','3','4','5'].includes(String(v.numeroCaixa||v.caixa)));
@@ -186,7 +217,7 @@ function gerarCard(nome,vendas,tipo,empresaKey){
     const val=Number(v.valor||v.valorTotal||0);
     const hora=v.horaFechamento||v.hora||'';
     if(v.cancelada){cancelados++;return;}
-    validos++; total+=val;
+    validos++;total+=val;
     if(tipo==='COM_ALMOCO' && isAlmoco(hora)) totalAlmoco+=val;
     (v.finalizacoes||[]).forEach(f=>{
       const idF=String(f.finalizadoraId||'');
@@ -246,10 +277,11 @@ function exportarPDF(){
 
 function enviarWhatsapp(){
   const boxes=document.querySelectorAll(".card");
-  const di=document.getElementById("dataInicio").value;
-  const df=document.getElementById("dataFim").value;
+  const hoje=new Date();
+  const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  const di=ontem.toISOString().slice(0,10);
   function fData(x){const [y,m,d]=x.split('-');return`${d}/${m}/${y}`;}
-  const periodo=(di===df)?fData(di):`${fData(di)} a ${fData(df)}`;
+  const periodo=fData(di);
   let msg=`📊 *Resumo Financeiro — ${periodo}*\n\n`;
   boxes.forEach(b=>{
     const titulo=b.querySelector("h2").innerText;
@@ -268,10 +300,6 @@ function enviarWhatsapp(){
    INICIALIZAÇÃO
 ============================ */
 document.addEventListener('DOMContentLoaded',()=>{
-  const hoje=new Date();
-  const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
-  document.getElementById('dataInicio').value=ontem.toISOString().slice(0,10);
-  document.getElementById('dataFim').value=hoje.toISOString().slice(0,10);
   carregar();
 });
 </script>
