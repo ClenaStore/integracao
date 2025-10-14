@@ -1,338 +1,193 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel Cupons Multilojas</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    :root {
-      --bg: #0b1020;
-      --surface: #10172a;
-      --card: #0f172a;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --line: rgba(148,163,184,.25);
-      --accent: #60a5fa;
-      --shadow: 0 20px 60px rgba(2,6,23,.35);
-      --radius: 12px;
-    }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-    }
-    header {
-      padding: 16px;
-      text-align: center;
-      background: var(--surface);
-      border-bottom: 1px solid var(--line);
-    }
-    header h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      color: var(--accent);
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      padding: 12px;
-      background: var(--surface);
-      flex-wrap: wrap;
-    }
-    .controls input[type="date"],
-    .controls button {
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      border: 1px solid var(--line);
-      background: var(--card);
-      color: var(--text);
-    }
-    .controls button:hover {
-      background: var(--accent);
-      color: #fff;
-    }
-    #panel {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 16px;
-      padding: 16px;
-    }
-    .empresa-box {
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
-      display: flex;
-      flex-direction: column;
-    }
-    .empresa-box h2 {
-      margin: 0 0 8px;
-      font-size: 1.2rem;
-      color: var(--accent);
-    }
-    .empresa-box .val-total {
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 10px;
-    }
-    .empresa-box ul {
-      list-style: none;
-      padding: 0;
-      margin: 0 0 12px;
-    }
-    .empresa-box ul li {
-      margin-bottom: 6px;
-      color: var(--muted);
-    }
-    .chart-container {
-      flex: 1;
-      position: relative;
-      height: 220px;
-    }
-    .empresa-box .click-more {
-      margin-top: 8px;
-      font-size: 0.85rem;
-      color: var(--muted);
-      text-align: center;
-      cursor: pointer;
-    }
-
-    /* Modal estilização simples */
-    .modal {
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    .modal.open { display: flex; }
-    .modal-content {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 20px;
-      max-width: 90%;
-      max-height: 90%;
-      overflow-y: auto;
-      color: var(--text);
-    }
-    .modal-content h3 {
-      margin-top: 0;
-      color: var(--accent);
-    }
-    .modal-close {
-      position: absolute;
-      top: 12px; right: 20px;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--muted);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Resumo de Entradas</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --bg:#0b1020;
+  --surface:#10172a;
+  --card:#0f172a;
+  --text:#e5e7eb;
+  --muted:#94a3b8;
+  --line:rgba(148,163,184,.25);
+  --accent:#60a5fa;
+  --accent2:#22d3ee;
+  --shadow:0 20px 60px rgba(2,6,23,.35);
+  --radius:14px;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;}
+header{
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface);border-bottom:1px solid var(--line);
+  padding:14px 10px;font-weight:800;font-size:1.2rem;color:var(--accent);
+}
+.controls{
+  display:flex;gap:10px;flex-wrap:wrap;justify-content:center;
+  background:var(--surface);padding:10px 0;border-bottom:1px solid var(--line);
+}
+.controls input,.controls button{
+  background:var(--card);color:var(--text);border:1px solid var(--line);
+  padding:8px 10px;border-radius:var(--radius);font-weight:600;
+}
+.controls button:hover{background:var(--accent);color:#fff;cursor:pointer;}
+#painel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:16px;padding:20px;max-width:1400px;margin:auto;
+}
+.card{
+  background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;
+}
+.card h2{margin:0 0 10px;color:var(--text);font-size:1.1rem;}
+.card .valor{
+  font-size:1.5rem;font-weight:800;margin-bottom:10px;color:var(--accent);
+}
+.card ul{list-style:none;margin:0;padding:0;font-size:.9rem;color:var(--muted);}
+.card ul li{margin-bottom:4px;}
+.card .almoco{
+  margin-top:8px;padding:8px;border:1px dashed var(--line);
+  border-radius:8px;color:var(--muted);font-size:.9rem;
+}
+.chart{
+  margin-top:10px;position:relative;height:240px;
+}
+.loading{text-align:center;color:var(--accent);font-weight:700;margin-top:40px;}
+</style>
 </head>
 <body>
 
-<header>
-  <h1>Entradas – Cupons Multilojas</h1>
-</header>
+<header>📊 Entradas • Painel Consolidado</header>
 
 <div class="controls">
-  <input type="date" id="dataInicio" />
-  <input type="date" id="dataFim" />
-  <button onclick="filtrar()">Filtrar</button>
+  <input type="date" id="dataInicio">
+  <input type="date" id="dataFim">
+  <button onclick="carregar()">Filtrar</button>
 </div>
 
-<div id="panel">
-  <div class="empresa-box"><div class="val-total">⏳ Carregando...</div></div>
-</div>
-
-<!-- Modal para dados detalhados / comparação anual -->
-<div id="modal" class="modal" onclick="fecharModal(event)">
-  <div class="modal-content">
-    <span class="modal-close" onclick="fecharModal(event)">&times;</span>
-    <div id="modal-body"></div>
-  </div>
-</div>
+<div id="painel"><div class="loading">Carregando dados...</div></div>
 
 <script>
-  const empresas = [
-    { nome: 'CARNEIRO MERCATTO RESTAURANTE', key: 'MERCATTO_RESTAURANTE' },
-    { nome: 'CARNEIRO MERCATTO EMPÓRIO', key: 'MERCATTO_EMPORIO' },
-    { nome: 'DELÍCIA GOURMET', key: 'VAREJO_URL_DELICIA' },
-    { nome: 'PADARIA DELÍCIA', key: 'VAREJO_URL_PADARIA' },
-    { nome: 'VILLA GOURMET', key: 'VAREJO_URL_VILLA' }
-  ];
+const empresas = [
+  { nome:'MERCATTO', key:'VAREJO_URL_MERCATTO', tipo:'MERCATTO' },
+  { nome:'DELÍCIA GOURMET', key:'VAREJO_URL_DELICIA' },
+  { nome:'PADARIA DELÍCIA', key:'VAREJO_URL_PADARIA' },
+  { nome:'VILLA GOURMET', key:'VAREJO_URL_VILLA' }
+];
 
-  function brl(n) {
-    return Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  }
+const brl = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const isAlmoco = hora=>{
+  if(!hora) return false;
+  const [h,m]=hora.split(':').map(Number);
+  const total=h*60+(m||0);
+  return total>=300 && total<=960; // 05h–16h
+};
 
-  function getHora(v) {
-    // adapta se sua API usar outro campo, ex: v.horaFechamento ou v.dataHoraFechamento
-    if (v.horaFechamento) return v.horaFechamento;
-    if (v.dataHoraFechamentoCupom) {
-      const dt = new Date(v.dataHoraFechamentoCupom);
-      return dt.getHours().toString().padStart(2,'0') + ':' + dt.getMinutes().toString().padStart(2,'0');
-    }
-    return v.hora || '';
-  }
+async function carregar(){
+  const painel=document.getElementById('painel');
+  painel.innerHTML='<div class="loading">🔄 Atualizando dados...</div>';
 
-  function inAlmoco(horaStr) {
-    // considera horário entre 05:00 e 16:00 como almoço
-    const [hh, mm] = horaStr.split(':').map(Number);
-    if (hh === undefined) return false;
-    const totalMin = hh * 60 + (mm || 0);
-    return totalMin >= 5 * 60 && totalMin <= 16 * 60;
-  }
+  const di=document.getElementById('dataInicio').value;
+  const df=document.getElementById('dataFim').value;
 
-  async function filtrar() {
-    const di = document.getElementById('dataInicio').value;
-    const df = document.getElementById('dataFim').value;
-    const panel = document.getElementById('panel');
-    panel.innerHTML = '';
-    for (const emp of empresas) {
-      const box = document.createElement('div');
-      box.className = 'empresa-box';
-      box.innerHTML = `<h2>${emp.nome}</h2><div class="val-total">⏳ Carregando...</div>`;
-      panel.appendChild(box);
-      try {
-        // login para empresa
-        const loginResp = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ empresa: emp.key })
-        });
-        const loginData = await loginResp.json();
-        const token = loginData.accessToken || loginData.token;
-        if (!token) throw new Error('Token não retornado');
+  const cards=[];
 
-        const resp = await fetch('/api/recebimentos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, dataInicio: di, dataFim: df, empresa: emp.key })
-        });
-        const raw = await resp.json();
-        const vendas = raw.items || [];
-
-        // Se for Mercatto, dividir por caixa para Empório / Restaurante
-        let vendasEmporio = [];
-        let vendasRestaurante = [];
-        if (emp.nome.includes('MERCATTO')) {
-          vendas.forEach(v => {
-            const caixa = v.numeroCaixa || v.caixa || ''; // ajustar campo conforme API
-            if (['1','2','3','4','5'].includes(String(caixa))) {
-              vendasEmporio.push(v);
-            } else {
-              vendasRestaurante.push(v);
-            }
-          });
-        }
-
-        let targetVendas = vendas;
-        // montar dois cards caso Mercatto
-        if (emp.nome.includes('MERCATTO')) {
-          // Empório
-          renderEmpresaBox(box, emp.nome + ' EMPÓRIO', vendasEmporio, false);
-          // Restaurante
-          const box2 = document.createElement('div');
-          box2.className = 'empresa-box';
-          panel.appendChild(box2);
-          renderEmpresaBox(box2, emp.nome + ' RESTAURANTE', vendasRestaurante, true);
-        } else {
-          renderEmpresaBox(box, emp.nome, vendas, true);
-        }
-
-      } catch (e) {
-        box.innerHTML = `<h2>${emp.nome}</h2><div class="val-total" style="color:var(--accent)">${e.message}</div>`;
-      }
-    }
-  }
-
-  function renderEmpresaBox(box, nome, vendas, mostrarAlmoco) {
-    // cálculo total, categorias, almoço etc
-    let total = 0;
-    let totalAlmoco = 0;
-    const catMap = {};
-
-    vendas.forEach(v => {
-      if (v.cancelada) return;
-      const val = Number(v.valor || v.valorTotal || 0);
-      total += val;
-
-      const hora = getHora(v);
-      if (mostrarAlmoco && inAlmoco(hora)) {
-        totalAlmoco += val;
-      }
-
-      const finals = v.finalizacoes || [];
-      finals.forEach(f => {
-        const idf = f.finalizadoraId || '';
-        const nomeF = f.descricao || idf;
-        catMap[nomeF] = (catMap[nomeF] || 0) + Number(f.valor || 0);
+  for(const emp of empresas){
+    try{
+      const login=await fetch('/api/login',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({empresa:emp.key})
       });
-    });
+      const loginData=await login.json();
+      const token=loginData.accessToken||loginData.token;
+      if(!token) throw new Error('Token inválido.');
 
-    const percentCancel = ((vendas.filter(v => v.cancelada).length / vendas.length) * 100).toFixed(1);
+      const resp=await fetch('/api/recebimentos',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({token,empresa:emp.key,dataInicio:di,dataFim:df})
+      });
+      const raw=await resp.json();
+      const vendas=raw.items||[];
 
-    // montar HTML
-    let html = `<h2>${nome}</h2>
-      <div class="val-total">${brl(total)}</div>`;
-    html += `<ul>`;
-    for (const [k, v] of Object.entries(catMap)) {
-      html += `<li>${k}: ${brl(v)}</li>`;
-    }
-    html += `</ul>`;
-    if (mostrarAlmoco) {
-      html += `<div>🍽️ Almoço: ${brl(totalAlmoco)}</div>`;
-    }
-    html += `<div class="chart-container"><canvas></canvas></div>`;
-    html += `<div class="click-more">Clique para ver evolução anual</div>`;
-
-    box.innerHTML = html;
-
-    // desenhar gráfico
-    const ctx = box.querySelector('canvas');
-    const labels = Object.keys(catMap);
-    const data = Object.values(catMap);
-    new Chart(ctx, {
-      type: 'bar',
-      data: { labels, datasets: [ { data, backgroundColor: labels.map((_,i)=> `hsl(${i*40},70%,50%)`) } ] },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } }
+      if(emp.tipo==='MERCATTO'){
+        const emporio=vendas.filter(v=>{
+          const cx=String(v.caixa||v.numeroCaixa||'');
+          return ['1','2','3','4','5'].includes(cx);
+        });
+        const rest=vendas.filter(v=>{
+          const cx=String(v.caixa||v.numeroCaixa||'');
+          return !['1','2','3','4','5'].includes(cx);
+        });
+        cards.push(gerarCard('CARNEIRO MERCATTO EMPÓRIO',emporio,false));
+        cards.push(gerarCard('CARNEIRO MERCATTO RESTAURANTE',rest,true));
+      }else{
+        cards.push(gerarCard(emp.nome,vendas,true));
       }
-    });
-
-    box.querySelector('.click-more').onclick = () => abrirModal(nome, vendas);
-  }
-
-  function abrirModal(nome, vendas) {
-    const modal = document.getElementById('modal');
-    const body = document.getElementById('modal-body');
-    body.innerHTML = `<h3>${nome}</h3>
-      <pre style="white-space:pre-wrap; color:var(--text);">${JSON.stringify(vendas,null,2)}</pre>`;
-    modal.classList.add('open');
-  }
-
-  function fecharModal(e) {
-    if (e.target.id === 'modal' || e.target.classList.contains('modal-close')) {
-      document.getElementById('modal').classList.remove('open');
+    }catch(e){
+      cards.push(`<div class="card"><h2>${emp.nome}</h2><div>${e.message}</div></div>`);
     }
   }
+  painel.innerHTML=cards.join('');
+  desenharGraficos();
+}
 
-  // inicializa com filtros padrão (por exemplo ontem)
-  document.addEventListener('DOMContentLoaded', () => {
-    const hoje = new Date();
-    const ontem = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate() - 1);
-    document.getElementById('dataInicio').value = ontem.toISOString().substring(0,10);
-    document.getElementById('dataFim').value = hoje.toISOString().substring(0,10);
-    filtrar();
+function gerarCard(nome,vendas,calcAlmoco){
+  const cat={};
+  let total=0;let totalAlmoco=0;
+  vendas.forEach(v=>{
+    if(v.cancelada) return;
+    const valor=Number(v.valor||v.valorTotal||0);
+    total+=valor;
+    const hora=v.horaFechamento||v.hora||'';
+    if(calcAlmoco && isAlmoco(hora)) totalAlmoco+=valor;
+    const fins=v.finalizacoes||[];
+    fins.forEach(f=>{
+      const nomeF=f.descricao||f.nome||'OUTROS';
+      const val=Number(f.valor||0);
+      cat[nomeF]=(cat[nomeF]||0)+val;
+    });
   });
+
+  let html=`<div class="card">
+  <h2>${nome}</h2>
+  <div class="valor">${brl(total)}</div>
+  <ul>`;
+  Object.entries(cat).forEach(([k,v])=>{
+    html+=`<li>${k}: ${brl(v)}</li>`;
+  });
+  html+='</ul>';
+  if(calcAlmoco) html+=`<div class="almoco">🍽️ Almoço: <b>${brl(totalAlmoco)}</b></div>`;
+  html+=`<div class="chart"><canvas></canvas></div></div>`;
+  return html;
+}
+
+function desenharGraficos(){
+  document.querySelectorAll('.chart').forEach(chartEl=>{
+    const canvas=chartEl.querySelector('canvas');
+    const ul=chartEl.parentElement.querySelector('ul');
+    const labels=[...ul.querySelectorAll('li')].map(li=>li.textContent.split(':')[0]);
+    const vals=[...ul.querySelectorAll('li')].map(li=>{
+      const val=li.textContent.split('R$')[1]||'0';return Number(val.replace('.','').replace(',','.'));
+    });
+    new Chart(canvas.getContext('2d'),{
+      type:'bar',
+      data:{labels,datasets:[{data:vals,backgroundColor:labels.map((_,i)=>`hsl(${i*45},70%,55%)`)}]},
+      options:{plugins:{legend:{display:false}},responsive:true,scales:{x:{ticks:{color:'#aaa'}},y:{ticks:{color:'#aaa'}}}}
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const hoje=new Date();
+  const ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  document.getElementById('dataInicio').value=ontem.toISOString().substring(0,10);
+  document.getElementById('dataFim').value=hoje.toISOString().substring(0,10);
+  carregar();
+});
 </script>
 
 </body>
