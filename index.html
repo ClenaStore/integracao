@@ -13,10 +13,12 @@
   --bg:#0b1020;--surface:#10172a;--card:#0f172a;
   --text:#e5e7eb;--muted:#94a3b8;--line:rgba(148,163,184,.25);
   --accent:#22d3ee;--accent2:#60a5fa;--radius:12px;--shadow:0 20px 60px rgba(2,6,23,.35);
+  --warn:#f87171;
 }
 [data-theme="light"]{
   --bg:#f6f7fb;--surface:#ffffff;--card:#ffffff;--text:#0f172a;
   --muted:#475569;--line:#e5e7eb;--shadow:0 16px 36px rgba(15,23,42,.08);
+  --warn:#dc2626;
 }
 *{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);font-size:14px;overflow-x:hidden}
@@ -35,6 +37,7 @@ header{position:sticky;top:0;background:var(--surface);border-bottom:1px solid v
 .valor{font-size:1.5rem;font-weight:800;margin-bottom:6px}
 ul{list-style:none;padding:0;margin:0;color:var(--muted);font-size:.9rem}
 ul li{margin-bottom:4px}
+ul li.desconhecida{color:var(--warn);font-weight:600}
 .almoco{margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:8px;color:var(--muted)}
 .chart{height:240px;margin-top:10px}
 footer{text-align:center;padding:20px;color:var(--muted);font-size:.85rem}
@@ -90,9 +93,7 @@ async function carregar(force=false){
  const dataSel=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
  showLoading();
  for(const emp of empresas){
-   fetchEmpresa(emp,dataSel).then(res=>{
-     renderEmpresa(res);
-   });
+   fetchEmpresa(emp,dataSel).then(res=>renderEmpresa(res));
  }
  hideLoading();
  atualizarHoje();
@@ -125,7 +126,7 @@ function renderEmpresa(res){
  desenharGraficos();
 }
 
-/* === ATUALIZAÇÃO HOJE (BG) === */
+/* === ATUALIZAÇÃO HOJE === */
 async function atualizarHoje(){
  const hoje=new Date().toISOString().slice(0,10);
  for(const emp of empresas){
@@ -141,7 +142,6 @@ async function atualizarHoje(){
  }
 }
 
-/* === ATUALIZA CARD === */
 function atualizarCard(nome,vendas,tipo,key){
  const novo=gerarCard(nome,vendas,tipo,key);
  const old=document.querySelector(`.card[data-nome="${nome}"]`);
@@ -149,9 +149,10 @@ function atualizarCard(nome,vendas,tipo,key){
  desenharGraficos();
 }
 
-/* === GERAR CARD === */
+/* === GERA CARD === */
 function gerarCard(nome,vendas,tipo,key){
  let total=0,alm=0,cancel=0,val=0;const formas={},map=finalizadorasPorEmpresa[key]||[];
+ const desconhecidas=[];
  vendas.forEach(v=>{
    const valor=Number(v.valor||v.valorTotal||0),hora=v.horaFechamento||v.hora||'';
    if(v.cancelada){cancel++;return;}val++;total+=valor;
@@ -160,12 +161,19 @@ function gerarCard(nome,vendas,tipo,key){
      const id=String(f.finalizadoraId||''),form=map.find(ff=>ff.id===id);
      const nomeF=form?`${id} - ${form.descricao}`:`${id} - Desconhecida`;
      formas[nomeF]=(formas[nomeF]||0)+Number(f.valor||0);
+     if(!form)desconhecidas.push(nomeF);
    });
  });
  let html=`<div class='card' data-nome="${nome}"><h2>${nome}</h2><div class='valor'>${brl(total)}</div><div style='display:flex;gap:10px;margin-bottom:8px;'><span style='color:#22c55e'>✅ ${val}</span><span style='color:#ef4444'>❌ ${cancel}</span></div><ul>`;
- Object.entries(formas).forEach(([k,v])=>html+=`<li>${k}: ${brl(v)}</li>`);
- html+=`</ul>`;if(tipo==='COM_ALMOCO')html+=`<div class='almoco'>🍽️ Almoço (05h–16h): <b>${brl(alm)}</b></div>`;
- html+=`<div class='chart'><canvas></canvas></div></div>`;return html;
+ Object.entries(formas).forEach(([k,v])=>{
+   const classe = k.includes('Desconhecida') ? 'desconhecida' : '';
+   html+=`<li class="${classe}">${k}: ${brl(v)}</li>`;
+ });
+ html+=`</ul>`;
+ if(tipo==='COM_ALMOCO')html+=`<div class='almoco'>🍽️ Almoço (05h–16h): <b>${brl(alm)}</b></div>`;
+ if(desconhecidas.length)html+=`<div style='color:var(--warn);margin-top:8px;font-weight:600;'>⚠️ ${desconhecidas.length} finalizadora(s) não catalogada(s)</div>`;
+ html+=`<div class='chart'><canvas></canvas></div></div>`;
+ return html;
 }
 
 /* === GRAFICOS === */
