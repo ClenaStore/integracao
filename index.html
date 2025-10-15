@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Resumo Financeiro • Grupo DV</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
-:root{
-  --bg:#f5f7fb;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
-  --accent:#2563eb;--success:#16a34a;--error:#dc2626;
-  --radius:16px;--shadow:0 8px 20px rgba(15,23,42,.08);
+:root {
+  --bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
+  --accent:#2563eb;--success:#16a34a;--error:#dc2626;--radius:14px;
+  --shadow:0 6px 16px rgba(15,23,42,.08);
 }
 [data-theme="dark"]{
   --bg:#0b1020;--card:#0f172a;--text:#e5e7eb;--muted:#94a3b8;
-  --line:rgba(148,163,184,.25);--shadow:0 12px 40px rgba(2,6,23,.35);
+  --line:rgba(148,163,184,.25);--shadow:0 10px 40px rgba(2,6,23,.35);
 }
 *{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
 body{margin:0;background:var(--bg);color:var(--text);transition:.3s background,color;}
@@ -25,7 +25,7 @@ header{
   padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);
   box-shadow:var(--shadow);
 }
-header img{height:42px}
+header img{height:40px}
 .title{font-weight:800;font-size:clamp(18px,1.6vw,22px)}
 .spacer{flex:1}
 button{
@@ -34,28 +34,32 @@ button{
   transition:.2s;box-shadow:var(--shadow);
 }
 button:hover{transform:translateY(-2px);background:var(--accent);color:#fff}
-.conteudo{max-width:1300px;margin:auto;padding:20px}
-.filtros{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  gap:10px;margin-bottom:20px;align-items:end;}
+.conteudo{max-width:1200px;margin:auto;padding:20px}
+.filtros{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;margin-bottom:20px;align-items:end;
+}
 label{font-weight:700;font-size:.9rem;color:var(--muted);margin-bottom:4px;display:block}
 input,select{
   width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
   background:var(--card);color:var(--text);font-weight:600;
 }
-#painel{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;align-items:start}
+#painel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:18px;align-items:start;
+}
 .card{
   background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:18px;overflow:hidden;position:relative;
-  transition:.3s ease;transform:translateY(10px);opacity:0;
+  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;
+  min-height:220px;position:relative;
 }
-.card.mostrar{opacity:1;transform:translateY(0)}
 .card h2{margin:0 0 8px;font-size:1rem;color:var(--accent)}
 .card .flag{
   position:absolute;top:10px;right:12px;font-size:20px;color:var(--success);opacity:0;
   transition:.3s;
 }
 .card.ok .flag{opacity:1}
-.valor{font-size:1.8rem;font-weight:800;margin-bottom:8px}
+.valor{font-size:1.6rem;font-weight:800;margin-bottom:10px}
 ul{list-style:none;padding:0;margin:0;color:var(--muted);font-weight:600;font-size:.9rem}
 li{margin-bottom:4px}
 .desconhecida{color:var(--error);font-weight:700}
@@ -63,8 +67,10 @@ li{margin-bottom:4px}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:.8rem;color:var(--muted)}
 .legend span::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px}
 footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
-#progress{position:fixed;top:0;left:0;height:4px;background:var(--accent);width:0%;transition:width .3s;z-index:9999;}
-.log{font-size:.8rem;color:var(--muted);margin-top:6px}
+#progress{
+  position:fixed;top:0;left:0;height:4px;background:var(--accent);width:0%;
+  transition:width .3s;z-index:9999;
+}
 </style>
 </head>
 <body>
@@ -92,6 +98,7 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
     <button onclick="exportarPDF()">📄 PDF</button>
     <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
   </div>
+
   <div id="painel"></div>
 </div>
 
@@ -109,17 +116,23 @@ const empresas=[
 const emojiMap={
   DINHEIRO:"💵",PIX:"💲",CREDITO:"💳",DÉBITO:"🏦",DEBITO:"🏦",
   VOUCHER:"🎟️",CONSUMO:"🍽️",BOLETO:"📄",ONLINE:"💻",
-  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",ERROS:"🧯",OUTROS:"💠"
+  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",ERROS:"🧯",OUTROS:"📦"
 };
+
 const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const getEmoji=(n)=>{const t=n.toUpperCase();for(const k in emojiMap)if(t.includes(k))return emojiMap[k];return "💠";}
+function getEmoji(nome){
+  const n=nome.toUpperCase();
+  for(const k in emojiMap){ if(n.includes(k)) return emojiMap[k]; }
+  return "💠";
+}
 
 function animateValue(el,start,end,duration){
   const range=end-start;let startTime=null;
-  function step(ts){
-    if(!startTime)startTime=ts;
-    const progress=Math.min((ts-startTime)/duration,1);
-    el.textContent=brl(start+range*progress);
+  function step(t){
+    if(!startTime)startTime=t;
+    const progress=Math.min((t-startTime)/duration,1);
+    const val=start+range*progress;
+    el.textContent=brl(val);
     if(progress<1)requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
@@ -135,9 +148,7 @@ function addCard(emp){
       <ul><li>Carregando...</li></ul>
       <div class="chart"><canvas></canvas></div>
       <div class="legend"></div>
-      <div class="log"></div>
     </div>`);
-  setTimeout(()=>document.getElementById('card_'+emp.chave).classList.add('mostrar'),150);
 }
 
 async function carregar(force=false){
@@ -148,7 +159,7 @@ async function carregar(force=false){
   empresas.forEach(addCard);
   const progress=document.getElementById('progress');
   progress.style.width='0%';
-  
+
   if(!force && localStorage.getItem(cacheKey)){
     const cache=JSON.parse(localStorage.getItem(cacheKey));
     cache.forEach(d=>atualizarCard(d.empresa,d.json));
@@ -156,52 +167,44 @@ async function carregar(force=false){
     return;
   }
 
-  let concluido=0,total=empresas.length;
-  const resultados=[];
-  for(const emp of empresas){
-    carregarEmpresa(emp,data,resultados).then(()=>{
-      concluido++;
-      progress.style.width=(concluido/total*100)+"%";
-    });
-    await new Promise(r=>setTimeout(r,400)); // atraso suave p/ visual sequência
-  }
-  await Promise.allSettled(resultados);
-  localStorage.setItem(cacheKey,JSON.stringify(resultados));
+  const promessas=empresas.map(async(emp)=>{
+    const card=document.getElementById('card_'+emp.chave);
+    const ul=card.querySelector('ul');
+    ul.innerHTML="<li>🔄 Login...</li>";
+    try{
+      const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
+      const {accessToken}=await login.json();
+      ul.innerHTML+="<li>📦 Buscando dados...</li>";
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
+      const json=await resp.json();
+      atualizarCard(emp,json,true);
+      ul.innerHTML+="<li>✅ Finalizado.</li>";
+      return {empresa:emp,json};
+    }catch(e){
+      ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
+      return {empresa:emp,error:e.message};
+    }
+  });
+
+  const results=await Promise.allSettled(promessas);
+  const valid=results.filter(r=>r.value).map(r=>r.value);
+  localStorage.setItem(cacheKey,JSON.stringify(valid));
+  progress.style.width='100%';
 }
 
-async function carregarEmpresa(emp,data,resultados){
-  const card=document.getElementById('card_'+emp.chave);
-  const log=card.querySelector('.log');
-  const ul=card.querySelector('ul');
-  try{
-    log.innerHTML="🔄 Login...";
-    const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
-    const {accessToken}=await login.json();
-    log.innerHTML+=" ✅<br>📦 Buscando dados...";
-    const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
-    const json=await resp.json();
-    resultados.push({empresa:emp,json});
-    log.innerHTML+=" ✅<br>💾 Processando...";
-    atualizarCard(emp,json,true);
-    log.innerHTML+=" ✅<br>✅ Finalizado.";
-  }catch(e){
-    ul.innerHTML=`<li class='desconhecida'>Erro: ${e.message}</li>`;
-    log.innerHTML+=" ❌ "+e.message;
-  }
-}
-
-function atualizarCard(emp,json,animar=false){
-  const card=document.getElementById('card_'+emp.chave);
+function atualizarCard(empresa,json,animar=false){
+  const card=document.getElementById('card_'+empresa.chave);
   const ul=card.querySelector('ul');
   const valorEl=card.querySelector('.valor');
   ul.innerHTML="";
   const itens=json.items||[];
   const formas={};let total=0;
   itens.forEach(v=>{
-    total+=Number(v.valorTotal||0);
+    const val=Number(v.valorTotal||0);total+=val;
     (v.finalizacoes||[]).forEach(f=>{
       const nome=(f.finalizadora||"").toUpperCase();
-      const key=`${getEmoji(nome)} ${nome}`;
+      const emo=getEmoji(nome);
+      const key=`${emo} ${nome}`;
       formas[key]=(formas[key]||0)+Number(f.valor||0);
     });
   });
@@ -221,7 +224,7 @@ function desenharGrafico(card){
   const lis=[...card.querySelectorAll('li')];
   const labels=lis.map(li=>li.textContent.split(':')[0]);
   const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
-  const cores=labels.map((_,i)=>`hsl(${i*40},70%,55%)`);
+  const cores=labels.map((_,i)=>`hsl(${i*45},70%,55%)`);
   new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
   options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
   const legend=card.querySelector('.legend');
