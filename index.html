@@ -1,175 +1,277 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<title>Consulta Cupons Mercatto</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Resumo Financeiro • Grupo DV</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <style>
-  :root { 
-    --bg:#0b1220;
-    --ink:#e5f0ff;
-    --muted:#a8b3c7;
-    --teal:#06b6d4;
-    --red:#ef4444;
-    --green:#16a34a;
-  }
-  body{
-    margin:0;background:var(--bg);color:var(--ink);
-    font-family:'Inter',system-ui;padding:20px;
-  }
-  h1{text-align:center;margin-bottom:20px;color:var(--teal);}
-  .controls{text-align:center;margin-bottom:20px;}
-  input,button{
-    padding:8px 10px;margin:4px;border-radius:6px;
-    border:none;font-size:14px;
-  }
-  button{background:var(--teal);color:#fff;font-weight:600;cursor:pointer;}
-  #layout{
-    display:flex;gap:40px;align-items:flex-start;justify-content:center;
-  }
-  #resumo{
-    width:45%;white-space:pre-wrap;line-height:1.5;font-size:14px;
-    background:#101827;padding:15px;border-radius:10px;
-    overflow:auto;max-height:80vh;
-  }
-  #saida{
-    flex:1;background:#111a2e;padding:20px;border-radius:8px;
-    overflow:auto;font-size:12px;color:#00ffaa;
-    max-height:80vh;
-  }
-  table{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:14px;}
-  th,td{border-bottom:1px solid #1f2937;padding:6px;text-align:left;}
-  th{color:var(--teal);}
-  tr:hover{background:#182237;}
-  .total{font-weight:700;color:var(--green);}
-  @media(max-width:900px){#layout{flex-direction:column}#resumo{width:100%}}
+:root {
+  --bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
+  --accent:#2563eb;--success:#16a34a;--error:#dc2626;--radius:14px;
+  --shadow:0 6px 16px rgba(15,23,42,.08);
+}
+[data-theme="dark"]{
+  --bg:#0b1020;--card:#0f172a;--text:#e5e7eb;--muted:#94a3b8;
+  --line:rgba(148,163,184,.25);--shadow:0 10px 40px rgba(2,6,23,.35);
+}
+*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
+body{margin:0;background:var(--bg);color:var(--text);transition:.3s background,color;}
+header{
+  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;
+  padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+header img{height:40px}
+.title{font-weight:800;font-size:clamp(18px,1.6vw,22px)}
+.spacer{flex:1}
+button{
+  cursor:pointer;border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--card);color:var(--text);padding:8px 14px;font-weight:700;
+  transition:.2s;box-shadow:var(--shadow);
+}
+button:hover{transform:translateY(-2px);background:var(--accent);color:#fff}
+.conteudo{max-width:1200px;margin:auto;padding:20px}
+.filtros{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;margin-bottom:20px;align-items:end;
+}
+label{font-weight:700;font-size:.9rem;color:var(--muted);margin-bottom:4px;display:block}
+input,select{
+  width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--text);font-weight:600;
+}
+#painel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:18px;align-items:start;
+}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;
+  min-height:220px;position:relative;
+}
+.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent)}
+.card .flag{
+  position:absolute;top:10px;right:12px;font-size:20px;color:var(--success);opacity:0;
+  transition:.3s;
+}
+.card.ok .flag{opacity:1}
+.valor{font-size:1.6rem;font-weight:800;margin-bottom:10px}
+ul{list-style:none;padding:0;margin:0;color:var(--muted);font-weight:600;font-size:.9rem}
+li{margin-bottom:4px}
+.desconhecida{color:var(--error);font-weight:700}
+.chart{margin-top:10px;height:200px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:.8rem;color:var(--muted)}
+.legend span::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px}
+footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
+#progress{
+  position:fixed;top:0;left:0;height:4px;background:var(--accent);width:0%;
+  transition:width .3s;z-index:9999;
+}
 </style>
 </head>
 <body>
-  <h1>Consulta Cupons Fiscais – Mercatto</h1>
 
-  <div class="controls">
-    <input type="date" id="dataInicio">
-    <input type="date" id="dataFim">
-    <button onclick="consultar()">Consultar</button>
+<header>
+  <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="">
+  <div class="title">Resumo Financeiro</div>
+  <div class="spacer"></div>
+  <button id="themeToggle">🌓</button>
+</header>
+
+<div id="progress"></div>
+
+<div class="conteudo">
+  <div class="filtros">
+    <div>
+      <label>Data</label>
+      <input type="date" id="dataFiltro">
+    </div>
+    <div>
+      <label>Empresa</label>
+      <select id="empresaFiltro"><option value="">Todas</option></select>
+    </div>
+    <button onclick="carregar(true)">🔄 Recarregar</button>
+    <button onclick="exportarPDF()">📄 PDF</button>
+    <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
   </div>
 
-  <div id="layout">
-    <div id="resumo">Aguardando consulta...</div>
-    <pre id="saida">Aguardando consulta...</pre>
-  </div>
+  <div id="painel"></div>
+</div>
+
+<footer>© 2025 Grupo DV</footer>
 
 <script>
-const formasPagamento=[
-  {"id":"1","descricao":"DINHEIRO"},
-  {"id":"2","descricao":"CARTAO CREDITO TEF"},
-  {"id":"3","descricao":"CARTAO DEBITO TEF"},
-  {"id":"4","descricao":"PIX CNPJ"},
-  {"id":"5","descricao":"CONSUMO FUNCIONARIOS"},
-  {"id":"6","descricao":"REFEICAO ALIME. TEF"},
-  {"id":"7","descricao":"TOTEM CREDITO"},
-  {"id":"8","descricao":"TOTEM DEBITO"},
-  {"id":"9","descricao":"BONIFICACAO"},
-  {"id":"15","descricao":"PIX QRCODE POS"},
-  {"id":"16","descricao":"PIX TEF"},
-  {"id":"17","descricao":"CREDITO POS"},
-  {"id":"18","descricao":"DEBITO POS"},
-  {"id":"19","descricao":"CART ALIMENTACAO POS"},
-  {"id":"25","descricao":"BOLETO MERCATTO KIDS"},
-  {"id":"26","descricao":"CREDIARIO CLIENTES"},
-  {"id":"27","descricao":"CONSUMO SOCIO"},
-  {"id":"29","descricao":"VOUCHER"},
-  {"id":"32","descricao":"PAGAMENTO ONLINE"},
-  {"id":"34","descricao":"MARKETING"},
-  {"id":"36","descricao":"PREJUIZO"},
-  {"id":"999","descricao":"SEM FATURAMENTO"}
+const empresas=[
+  {nome:"CARNEIRO MERCATTO RESTAURANTE",chave:"VAREJO_URL_MERCATTO"},
+  {nome:"CARNEIRO MERCATTO EMPÓRIO",chave:"VAREJO_URL_MERCATTO"},
+  {nome:"DELICIA GOURMET",chave:"VAREJO_URL_DELICIA"},
+  {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA"},
+  {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA"}
 ];
 
-const brl = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const emojiMap={
+  DINHEIRO:"💵",PIX:"💲",CREDITO:"💳",DÉBITO:"🏦",DEBITO:"🏦",
+  VOUCHER:"🎟️",CONSUMO:"🍽️",BOLETO:"📄",ONLINE:"💻",
+  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",ERROS:"🧯",OUTROS:"📦"
+};
 
-async function consultar(){
-  const dataInicio = document.getElementById('dataInicio').value;
-  const dataFim    = document.getElementById('dataFim').value;
-  const saida  = document.getElementById('saida');
-  const resumo = document.getElementById('resumo');
-
-  resumo.textContent = "🔄 Processando...";
-  saida.textContent  = "🔄 Buscando dados...";
-
-  try{
-    // 🔐 Login
-    const loginResp = await fetch('/api/login',{method:'POST'});
-    const {accessToken} = await loginResp.json();
-
-    // 🔗 Busca cupons
-    const resp = await fetch('/api/recebimentos',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:accessToken,dataInicio,dataFim})
-    });
-    const raw = await resp.json();
-    saida.textContent = JSON.stringify(raw,null,2);
-
-    const vendas = raw.items || [];
-    if(vendas.length===0){
-      resumo.textContent = "Nenhum cupom encontrado para o período selecionado.";
-      return;
-    }
-
-    // === Montagem da lista de cupons ===
-    let tabela = `
-    <table>
-      <thead>
-        <tr><th>Caixa</th><th>Finalizadora</th><th>Valor</th><th>Cupom</th></tr>
-      </thead>
-      <tbody>
-    `;
-    const totais = {};
-    let totalGeral = 0;
-
-    for(const v of vendas){
-      const caixa = v.numeroCaixa || "—";
-      const seq   = v.sequencial || v.id || "—";
-      const fins  = Array.isArray(v.finalizacoes) ? v.finalizacoes : [];
-
-      fins.forEach(f=>{
-        const idf = String(f.finalizadoraId ?? "?").replace(/^0+/, "");
-        const forma = formasPagamento.find(fp=>fp.id==idf);
-        const nome  = forma ? forma.descricao : "❌ Não catalogada";
-        const valor = Number(f.valor || 0);
-
-        // soma total
-        if(!totais[idf]) totais[idf] = { nome, total: 0 };
-        totais[idf].total += valor;
-        totalGeral += valor;
-
-        tabela += `<tr>
-          <td>${caixa}</td>
-          <td>${idf} - ${nome}</td>
-          <td>${brl(valor)}</td>
-          <td>${seq}</td>
-        </tr>`;
-      });
-    }
-
-    tabela += "</tbody></table>";
-
-    // === Totais por finalizadora ===
-    let totaisHtml = "<h3>💰 Totais por Finalizadora</h3><table><tbody>";
-    const ordenado = Object.entries(totais).sort((a,b)=>b[1].total - a[1].total);
-    for(const [idf, info] of ordenado){
-      totaisHtml += `<tr><td>${idf} - ${info.nome}</td><td class="total">${brl(info.total)}</td></tr>`;
-    }
-    totaisHtml += `<tr><td><b>TOTAL GERAL</b></td><td class="total">${brl(totalGeral)}</td></tr></tbody></table>`;
-
-    resumo.innerHTML = tabela + totaisHtml;
-
-  }catch(e){
-    resumo.textContent='❌ Erro ao buscar dados.';
-    saida.textContent='Erro: '+e.message;
-  }
+const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function getEmoji(nome){
+  const n=nome.toUpperCase();
+  for(const k in emojiMap){ if(n.includes(k)) return emojiMap[k]; }
+  return "💠";
 }
+
+function animateValue(el,start,end,duration){
+  const range=end-start;let startTime=null;
+  function step(t){
+    if(!startTime)startTime=t;
+    const progress=Math.min((t-startTime)/duration,1);
+    const val=start+range*progress;
+    el.textContent=brl(val);
+    if(progress<1)requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function addCard(emp){
+  const painel=document.getElementById('painel');
+  painel.insertAdjacentHTML('beforeend',`
+    <div class="card" id="card_${emp.chave}">
+      <div class="flag">✅</div>
+      <h2>${emp.nome}</h2>
+      <div class="valor">R$ 0,00</div>
+      <ul><li>Carregando...</li></ul>
+      <div class="chart"><canvas></canvas></div>
+      <div class="legend"></div>
+    </div>`);
+}
+
+async function carregar(force=false){
+  const data=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const cacheKey="resumo_"+data;
+  const painel=document.getElementById('painel');
+  painel.innerHTML="";
+  empresas.forEach(addCard);
+  const progress=document.getElementById('progress');
+  progress.style.width='0%';
+
+  if(!force && localStorage.getItem(cacheKey)){
+    const cache=JSON.parse(localStorage.getItem(cacheKey));
+    cache.forEach(d=>atualizarCard(d.empresa,d.json));
+    progress.style.width='100%';
+    return;
+  }
+
+  const promessas=empresas.map(async(emp)=>{
+    const card=document.getElementById('card_'+emp.chave);
+    const ul=card.querySelector('ul');
+    ul.innerHTML="<li>🔄 Login...</li>";
+    try{
+      const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
+      const {accessToken}=await login.json();
+      ul.innerHTML+="<li>📦 Buscando dados...</li>";
+      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
+      const json=await resp.json();
+      atualizarCard(emp,json,true);
+      ul.innerHTML+="<li>✅ Finalizado.</li>";
+      return {empresa:emp,json};
+    }catch(e){
+      ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
+      return {empresa:emp,error:e.message};
+    }
+  });
+
+  const results=await Promise.allSettled(promessas);
+  const valid=results.filter(r=>r.value).map(r=>r.value);
+  localStorage.setItem(cacheKey,JSON.stringify(valid));
+  progress.style.width='100%';
+}
+
+function atualizarCard(empresa,json,animar=false){
+  const card=document.getElementById('card_'+empresa.chave);
+  const ul=card.querySelector('ul');
+  const valorEl=card.querySelector('.valor');
+  ul.innerHTML="";
+  const itens=json.items||[];
+  const formas={};let total=0;
+  itens.forEach(v=>{
+    const val=Number(v.valorTotal||0);total+=val;
+    (v.finalizacoes||[]).forEach(f=>{
+      const nome=(f.finalizadora||"").toUpperCase();
+      const emo=getEmoji(nome);
+      const key=`${emo} ${nome}`;
+      formas[key]=(formas[key]||0)+Number(f.valor||0);
+    });
+  });
+  animateValue(valorEl,0,total,1000);
+  Object.entries(formas).forEach(([k,v])=>{
+    const li=document.createElement('li');
+    li.textContent=`${k}: ${brl(v)}`;
+    if(k.includes("NÃO"))li.classList.add('desconhecida');
+    ul.appendChild(li);
+  });
+  desenharGrafico(card);
+  card.classList.add('ok');
+}
+
+function desenharGrafico(card){
+  const ctx=card.querySelector('canvas');
+  const lis=[...card.querySelectorAll('li')];
+  const labels=lis.map(li=>li.textContent.split(':')[0]);
+  const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
+  const cores=labels.map((_,i)=>`hsl(${i*45},70%,55%)`);
+  new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
+  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
+  const legend=card.querySelector('.legend');
+  legend.innerHTML="";
+  labels.forEach((lab,i)=>{
+    const sp=document.createElement('span');
+    sp.style.color=cores[i];
+    sp.textContent=lab;
+    legend.appendChild(sp);
+  });
+}
+
+function exportarPDF(){
+  const cards=document.querySelectorAll('.card');
+  cards.forEach((c,i)=>{
+    const wrap=document.createElement('div');
+    wrap.style.width='1000px';wrap.style.padding='30px';wrap.style.background='#fff';wrap.style.color='#000';
+    const h=document.createElement('h1');h.textContent='Resumo Financeiro - Grupo DV';h.style.textAlign='center';wrap.appendChild(h);
+    const clone=c.cloneNode(true);wrap.appendChild(clone);
+    html2pdf().from(wrap).set({margin:0,filename:`resumo-${i+1}.pdf`,
+    image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
+    jsPDF:{unit:'px',format:[1000,800],orientation:'landscape'}}).save();
+  });
+}
+
+function enviarWhatsapp(){
+  const cards=document.querySelectorAll('.card');
+  let msg="📊 *Resumo Financeiro - Grupo DV*\n\n";
+  cards.forEach(c=>{
+    msg+=`*${c.querySelector('h2').innerText}*\n`;
+    c.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
+    msg+='\n';
+  });
+  window.open(`https://wa.me/5577999761436?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const hoje=new Date(),ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
+  document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
+  carregar();
+});
+document.getElementById('themeToggle').onclick=()=>{
+  const cur=document.documentElement.getAttribute('data-theme')||'light';
+  const next=cur==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('dv_theme',next);
+};
 </script>
 </body>
 </html>
