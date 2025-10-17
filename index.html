@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-<title>Comissões • Mercatto Delícia (Tempo Real)</title>
+<title>Comissões • Mercatto Delícia • Tempo Real</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -40,7 +40,8 @@ section.card{
 }
 .card h2{margin-top:0;color:var(--accent)}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.valor{font-size:1.3rem;font-weight:800;}
+.valor{font-size:1.3rem;font-weight:800;transition:.3s;}
+.valor.flash{background:yellow;color:#000;padding:3px 6px;border-radius:8px;}
 .sub{color:var(--muted);font-size:.9rem;margin-bottom:6px;}
 .totalgeral{
   background:var(--accent);color:#fff;padding:16px;border-radius:var(--radius);
@@ -67,7 +68,7 @@ footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.8rem;}
 }
 #statusLog{
   background:#fff;border-radius:var(--radius);padding:10px;margin-top:10px;
-  border:1px solid var(--line);font-size:.9rem;color:var(--muted);max-height:160px;overflow:auto;
+  border:1px solid var(--line);font-size:.9rem;color:var(--muted);max-height:200px;overflow:auto;
 }
 </style>
 </head>
@@ -119,9 +120,13 @@ const consoleDiv=document.getElementById('console');
 const logDiv=document.getElementById('statusLog');
 document.getElementById('toggleConsole').onclick=()=>consoleDiv.classList.toggle('active');
 
-function log(msg, json){
+function log(msg, json, tipo='info'){
   const hora=new Date().toLocaleTimeString();
-  logDiv.innerHTML+=`<div>🕒 [${hora}] ${msg}</div>`;
+  let icone='ℹ️';
+  if(tipo==='ok') icone='✅';
+  if(tipo==='erro') icone='❌';
+  if(tipo==='load') icone='📦';
+  logDiv.innerHTML+=`<div>${icone} [${hora}] ${msg}</div>`;
   logDiv.scrollTop=logDiv.scrollHeight;
   if(json){
     const pre=document.createElement('pre');
@@ -137,34 +142,41 @@ async function buscar(){
   loopAtivo=true;
   document.getElementById('btnBuscar').style.display='none';
   document.getElementById('btnParar').style.display='inline-block';
-  log('🚀 Iniciando monitoramento em tempo real...');
+  log('🚀 Iniciando monitoramento em tempo real...',null,'ok');
   await atualizar(inicio,fim);
   intervalo=setInterval(()=>{if(loopAtivo)atualizar(inicio,fim);},3000);
 }
 
 async function atualizar(inicio,fim){
   try{
-    progress.style.width='20%';
+    progress.style.width='10%';
     const resultados=[];
     for(const emp of empresas){
       log(`🏢 Empresa: ${emp.nome}`);
       const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
-      const {accessToken}=await login.json();
-      progress.style.width='40%';
-      log(`🔐 Token gerado para ${emp.nome}`);
+      const {accessToken,error}=await login.json();
+      if(error){ log(`Erro ao autenticar ${emp.nome}: ${error}`,'','erro'); continue; }
+      progress.style.width='30%';
+      log(`🔐 Token gerado para ${emp.nome}`,'','ok');
       const req=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
         token:accessToken,empresa:emp.chave,dataInicio:inicio,dataFim:fim
       })});
+      if(!req.ok){
+        const erroTxt=await req.text();
+        log(`❌ Falha ao obter cupons de ${emp.nome}: ${erroTxt}`,'','erro');
+        continue;
+      }
       const json=await req.json();
-      log(`📦 ${json.items?.length||0} cupons recebidos (${emp.nome})`, json);
+      const qtd=json.items?.length||0;
+      log(`📦 ${qtd} cupons recebidos (${emp.nome})`, json, qtd>0?'ok':'info');
       resultados.push(...(json.items||[]));
-      progress.style.width='80%';
+      progress.style.width='70%';
     }
     gerarRelatorio(resultados);
     progress.style.width='100%';
     setTimeout(()=>progress.style.width='0%',1000);
   }catch(e){
-    log('❌ Erro: '+e.message);
+    log('❌ Erro geral: '+e.message,null,'erro');
     progress.style.width='0%';
   }
 }
@@ -186,6 +198,7 @@ function gerarRelatorio(cupons){
       resumo.madrugada.total+=val;resumo.madrugada.qtd++;
     }
   });
+
   const totalGeral=resumo.almoco.total+resumo.jantar.total+resumo.madrugada.total;
   const rel=document.getElementById('relatorio');
   rel.innerHTML=`
@@ -195,7 +208,12 @@ function gerarRelatorio(cupons){
     <div><div class="sub">🌙 Comissão Madrugada</div><div class="valor">${brl(resumo.madrugada.total)}</div><div class="sub">${resumo.madrugada.qtd} tickets</div></div>
     <div><div class="sub" style="color:var(--danger)">❌ Cancelados</div><div class="valor" style="color:var(--danger)">${brl(resumo.cancelados.total)}</div><div class="sub">${resumo.cancelados.qtd} tickets</div></div>
   </div>`;
-  document.getElementById('totalgeral').textContent=`TOTAL GERAL: ${brl(totalGeral)}`;
+
+  const totalEl=document.getElementById('totalgeral');
+  totalEl.textContent=`TOTAL GERAL: ${brl(totalGeral)}`;
+  totalEl.classList.add('flash');
+  setTimeout(()=>totalEl.classList.remove('flash'),500);
+
   const ctx=document.getElementById('grafico');
   new Chart(ctx,{type:'bar',
     data:{labels:['Almoço','Jantar','Madrugada','Cancelados'],
@@ -203,6 +221,7 @@ function gerarRelatorio(cupons){
     backgroundColor:['#16a34a','#2563eb','#0ea5e9','#dc2626']}]},
     options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
   });
+  log(`📊 Relatório atualizado (${cupons.length} cupons processados).`,'','ok');
 }
 
 function parar(){
@@ -210,7 +229,7 @@ function parar(){
   clearInterval(intervalo);
   document.getElementById('btnBuscar').style.display='inline-block';
   document.getElementById('btnParar').style.display='none';
-  log('⏹️ Monitoramento parado.');
+  log('⏹️ Monitoramento parado.','','info');
 }
 
 document.getElementById('btnParar').onclick=parar;
