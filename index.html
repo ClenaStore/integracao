@@ -1,277 +1,158 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="light">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Resumo Financeiro • Grupo DV</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Comissões • Mercatto Delícia</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-
 <style>
-:root {
+:root{
   --bg:#f8fafc;--card:#fff;--text:#0f172a;--muted:#64748b;--line:#e2e8f0;
-  --accent:#2563eb;--success:#16a34a;--error:#dc2626;--radius:14px;
-  --shadow:0 6px 16px rgba(15,23,42,.08);
+  --accent:#2563eb;--success:#16a34a;--danger:#dc2626;
+  --radius:16px;--shadow:0 6px 20px rgba(15,23,42,.08);
 }
-[data-theme="dark"]{
-  --bg:#0b1020;--card:#0f172a;--text:#e5e7eb;--muted:#94a3b8;
-  --line:rgba(148,163,184,.25);--shadow:0 10px 40px rgba(2,6,23,.35);
-}
-*{box-sizing:border-box;font-family:'Inter',system-ui,sans-serif}
-body{margin:0;background:var(--bg);color:var(--text);transition:.3s background,color;}
+body{margin:0;font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);}
 header{
-  position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;
-  padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);
-  box-shadow:var(--shadow);
+  background:var(--card);box-shadow:var(--shadow);padding:14px 20px;
+  display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;
 }
 header img{height:40px}
-.title{font-weight:800;font-size:clamp(18px,1.6vw,22px)}
-.spacer{flex:1}
-button{
-  cursor:pointer;border:1px solid var(--line);border-radius:var(--radius);
-  background:var(--card);color:var(--text);padding:8px 14px;font-weight:700;
-  transition:.2s;box-shadow:var(--shadow);
-}
-button:hover{transform:translateY(-2px);background:var(--accent);color:#fff}
-.conteudo{max-width:1200px;margin:auto;padding:20px}
+h1{margin:0;font-size:1.2rem;font-weight:800;}
+main{max-width:1000px;margin:auto;padding:20px;}
 .filtros{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
   gap:10px;margin-bottom:20px;align-items:end;
 }
-label{font-weight:700;font-size:.9rem;color:var(--muted);margin-bottom:4px;display:block}
-input,select{
-  width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;
+label{font-weight:600;color:var(--muted);font-size:.9rem}
+input[type="date"]{
+  width:100%;padding:10px;border:1px solid var(--line);border-radius:var(--radius);
   background:var(--card);color:var(--text);font-weight:600;
 }
-#painel{
-  display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-  gap:18px;align-items:start;
+button{
+  padding:10px 16px;border:none;border-radius:var(--radius);font-weight:700;
+  background:var(--accent);color:#fff;cursor:pointer;transition:.3s;
 }
-.card{
-  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:16px;overflow:hidden;transition:.3s;
-  min-height:220px;position:relative;
+button:hover{opacity:.9;transform:translateY(-2px)}
+section.card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:20px;margin-bottom:20px;border:1px solid var(--line);
 }
-.card h2{margin:0 0 8px;font-size:1rem;color:var(--accent)}
-.card .flag{
-  position:absolute;top:10px;right:12px;font-size:20px;color:var(--success);opacity:0;
-  transition:.3s;
+.card h2{margin-top:0;color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.valor{font-size:1.3rem;font-weight:800;}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:6px;}
+.totalgeral{
+  background:var(--accent);color:#fff;padding:16px;border-radius:var(--radius);
+  font-size:1.3rem;font-weight:800;text-align:center;box-shadow:var(--shadow);
 }
-.card.ok .flag{opacity:1}
-.valor{font-size:1.6rem;font-weight:800;margin-bottom:10px}
-ul{list-style:none;padding:0;margin:0;color:var(--muted);font-weight:600;font-size:.9rem}
-li{margin-bottom:4px}
-.desconhecida{color:var(--error);font-weight:700}
-.chart{margin-top:10px;height:200px}
-.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:.8rem;color:var(--muted)}
-.legend span::before{content:"";width:10px;height:10px;border-radius:50%;background:currentColor;display:inline-block;margin-right:4px}
-footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
-#progress{
-  position:fixed;top:0;left:0;height:4px;background:var(--accent);width:0%;
-  transition:width .3s;z-index:9999;
-}
+footer{text-align:center;padding:30px 0;color:var(--muted);font-size:.8rem;}
+#loading{position:fixed;inset:0;background:rgba(255,255,255,.85);display:none;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;color:var(--accent);}
 </style>
 </head>
 <body>
-
 <header>
-  <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true" alt="">
-  <div class="title">Resumo Financeiro</div>
-  <div class="spacer"></div>
-  <button id="themeToggle">🌓</button>
+  <img src="https://github.com/ClenaStore/painel-principal/blob/main/img/GRUPO%20DV%20(1).png?raw=true">
+  <h1>Comissões - Mercatto Delícia</h1>
 </header>
 
-<div id="progress"></div>
+<div id="loading">Carregando dados...</div>
 
-<div class="conteudo">
+<main>
   <div class="filtros">
     <div>
-      <label>Data</label>
-      <input type="date" id="dataFiltro">
+      <label>Data Início</label>
+      <input type="date" id="inicio">
     </div>
     <div>
-      <label>Empresa</label>
-      <select id="empresaFiltro"><option value="">Todas</option></select>
+      <label>Data Fim</label>
+      <input type="date" id="fim">
     </div>
-    <button onclick="carregar(true)">🔄 Recarregar</button>
-    <button onclick="exportarPDF()">📄 PDF</button>
-    <button onclick="enviarWhatsapp()">📲 WhatsApp</button>
+    <button onclick="buscar()">🔄 Consultar</button>
   </div>
 
-  <div id="painel"></div>
-</div>
+  <section class="card">
+    <h2>Relatório de Comissões</h2>
+    <div id="relatorio">Escolha o período e clique em Consultar.</div>
+    <canvas id="grafico" height="180"></canvas>
+  </section>
+
+  <div class="totalgeral" id="totalgeral">R$ 0,00</div>
+</main>
 
 <footer>© 2025 Grupo DV</footer>
 
 <script>
-const empresas=[
-  {nome:"CARNEIRO MERCATTO RESTAURANTE",chave:"VAREJO_URL_MERCATTO"},
-  {nome:"CARNEIRO MERCATTO EMPÓRIO",chave:"VAREJO_URL_MERCATTO"},
-  {nome:"DELICIA GOURMET",chave:"VAREJO_URL_DELICIA"},
-  {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA"},
-  {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA"}
+const empresas = [
+  { nome:"CARNEIRO MERCATTO RESTAURANTE", chave:"VAREJO_URL_MERCATTO" },
+  { nome:"CARNEIRO MERCATTO EMPÓRIO", chave:"VAREJO_URL_MERCATTO" }
 ];
-
-const emojiMap={
-  DINHEIRO:"💵",PIX:"💲",CREDITO:"💳",DÉBITO:"🏦",DEBITO:"🏦",
-  VOUCHER:"🎟️",CONSUMO:"🍽️",BOLETO:"📄",ONLINE:"💻",
-  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",ERROS:"🧯",OUTROS:"📦"
-};
-
 const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-function getEmoji(nome){
-  const n=nome.toUpperCase();
-  for(const k in emojiMap){ if(n.includes(k)) return emojiMap[k]; }
-  return "💠";
-}
 
-function animateValue(el,start,end,duration){
-  const range=end-start;let startTime=null;
-  function step(t){
-    if(!startTime)startTime=t;
-    const progress=Math.min((t-startTime)/duration,1);
-    const val=start+range*progress;
-    el.textContent=brl(val);
-    if(progress<1)requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
-function addCard(emp){
-  const painel=document.getElementById('painel');
-  painel.insertAdjacentHTML('beforeend',`
-    <div class="card" id="card_${emp.chave}">
-      <div class="flag">✅</div>
-      <h2>${emp.nome}</h2>
-      <div class="valor">R$ 0,00</div>
-      <ul><li>Carregando...</li></ul>
-      <div class="chart"><canvas></canvas></div>
-      <div class="legend"></div>
-    </div>`);
-}
-
-async function carregar(force=false){
-  const data=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
-  const cacheKey="resumo_"+data;
-  const painel=document.getElementById('painel');
-  painel.innerHTML="";
-  empresas.forEach(addCard);
-  const progress=document.getElementById('progress');
-  progress.style.width='0%';
-
-  if(!force && localStorage.getItem(cacheKey)){
-    const cache=JSON.parse(localStorage.getItem(cacheKey));
-    cache.forEach(d=>atualizarCard(d.empresa,d.json));
-    progress.style.width='100%';
-    return;
-  }
-
-  const promessas=empresas.map(async(emp)=>{
-    const card=document.getElementById('card_'+emp.chave);
-    const ul=card.querySelector('ul');
-    ul.innerHTML="<li>🔄 Login...</li>";
+async function buscar(){
+  const inicio=document.getElementById('inicio').value;
+  const fim=document.getElementById('fim').value;
+  if(!inicio||!fim){alert('Selecione o período completo.');return;}
+  document.getElementById('loading').style.display='flex';
+  const resultados=[];
+  for(const emp of empresas){
     try{
       const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
       const {accessToken}=await login.json();
-      ul.innerHTML+="<li>📦 Buscando dados...</li>";
-      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
-      const json=await resp.json();
-      atualizarCard(emp,json,true);
-      ul.innerHTML+="<li>✅ Finalizado.</li>";
-      return {empresa:emp,json};
-    }catch(e){
-      ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
-      return {empresa:emp,error:e.message};
+      const req=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+        token:accessToken,empresa:emp.chave,dataInicio:inicio,dataFim:fim
+      })});
+      const json=await req.json();
+      resultados.push(...(json.items||[]));
+    }catch(e){console.error(e);}
+  }
+  gerarRelatorio(resultados);
+  document.getElementById('loading').style.display='none';
+}
+
+function gerarRelatorio(cupons){
+  const resumo={almoco:{total:0,qtd:0},jantar:{total:0,qtd:0},madrugada:{total:0,qtd:0},cancelados:{total:0,qtd:0}};
+  cupons.forEach(c=>{
+    const val=Number(c.valorServico||0);
+    const hora=c.dataVenda?.split('T')[1]?.slice(0,5)||'00:00';
+    const cancelado=c.cancelado||false;
+    if(cancelado){resumo.cancelados.total+=val;resumo.cancelados.qtd++;return;}
+    const [h,m]=hora.split(':').map(Number);
+    const minutos=h*60+m;
+    if(minutos>=600 && minutos<=900){ // 10:00–15:00
+      resumo.almoco.total+=val;resumo.almoco.qtd++;
+    }else if(minutos>901 && minutos<=1439){ // 15:01–23:59
+      resumo.jantar.total+=val;resumo.jantar.qtd++;
+    }else{ // 00:00–09:59
+      resumo.madrugada.total+=val;resumo.madrugada.qtd++;
     }
   });
 
-  const results=await Promise.allSettled(promessas);
-  const valid=results.filter(r=>r.value).map(r=>r.value);
-  localStorage.setItem(cacheKey,JSON.stringify(valid));
-  progress.style.width='100%';
-}
+  const totalGeral = resumo.almoco.total+resumo.jantar.total+resumo.madrugada.total;
+  const rel=document.getElementById('relatorio');
+  rel.innerHTML=`
+    <div class="grid">
+      <div><div class="sub">🍽️ Comissão Almoço (10:00–15:00)</div><div class="valor">${brl(resumo.almoco.total)}</div><div class="sub">${resumo.almoco.qtd} tickets</div></div>
+      <div><div class="sub">🌆 Comissão Jantar (15:01–23:59)</div><div class="valor">${brl(resumo.jantar.total)}</div><div class="sub">${resumo.jantar.qtd} tickets</div></div>
+      <div><div class="sub">🌙 Comissão Madrugada (00:00–09:59)</div><div class="valor">${brl(resumo.madrugada.total)}</div><div class="sub">${resumo.madrugada.qtd} tickets</div></div>
+      <div><div class="sub" style="color:var(--danger)">❌ Cancelados</div><div class="valor" style="color:var(--danger)">${brl(resumo.cancelados.total)}</div><div class="sub">${resumo.cancelados.qtd} tickets</div></div>
+    </div>`;
+  document.getElementById('totalgeral').textContent=`TOTAL GERAL DE COMISSÕES: ${brl(totalGeral)}`;
 
-function atualizarCard(empresa,json,animar=false){
-  const card=document.getElementById('card_'+empresa.chave);
-  const ul=card.querySelector('ul');
-  const valorEl=card.querySelector('.valor');
-  ul.innerHTML="";
-  const itens=json.items||[];
-  const formas={};let total=0;
-  itens.forEach(v=>{
-    const val=Number(v.valorTotal||0);total+=val;
-    (v.finalizacoes||[]).forEach(f=>{
-      const nome=(f.finalizadora||"").toUpperCase();
-      const emo=getEmoji(nome);
-      const key=`${emo} ${nome}`;
-      formas[key]=(formas[key]||0)+Number(f.valor||0);
-    });
+  const ctx=document.getElementById('grafico');
+  new Chart(ctx,{type:'bar',
+    data:{labels:['Almoço','Jantar','Madrugada','Cancelados'],
+    datasets:[{data:[resumo.almoco.total,resumo.jantar.total,resumo.madrugada.total,resumo.cancelados.total],
+    backgroundColor:['#16a34a','#2563eb','#0ea5e9','#dc2626']}]},
+    options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}
   });
-  animateValue(valorEl,0,total,1000);
-  Object.entries(formas).forEach(([k,v])=>{
-    const li=document.createElement('li');
-    li.textContent=`${k}: ${brl(v)}`;
-    if(k.includes("NÃO"))li.classList.add('desconhecida');
-    ul.appendChild(li);
-  });
-  desenharGrafico(card);
-  card.classList.add('ok');
-}
-
-function desenharGrafico(card){
-  const ctx=card.querySelector('canvas');
-  const lis=[...card.querySelectorAll('li')];
-  const labels=lis.map(li=>li.textContent.split(':')[0]);
-  const vals=lis.map(li=>Number((li.textContent.split('R$')[1]||'0').replace('.','').replace(',','.')));
-  const cores=labels.map((_,i)=>`hsl(${i*45},70%,55%)`);
-  new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cores}]},
-  options:{plugins:{legend:{display:false}},scales:{x:{ticks:{display:false}},y:{beginAtZero:true}}}});
-  const legend=card.querySelector('.legend');
-  legend.innerHTML="";
-  labels.forEach((lab,i)=>{
-    const sp=document.createElement('span');
-    sp.style.color=cores[i];
-    sp.textContent=lab;
-    legend.appendChild(sp);
-  });
-}
-
-function exportarPDF(){
-  const cards=document.querySelectorAll('.card');
-  cards.forEach((c,i)=>{
-    const wrap=document.createElement('div');
-    wrap.style.width='1000px';wrap.style.padding='30px';wrap.style.background='#fff';wrap.style.color='#000';
-    const h=document.createElement('h1');h.textContent='Resumo Financeiro - Grupo DV';h.style.textAlign='center';wrap.appendChild(h);
-    const clone=c.cloneNode(true);wrap.appendChild(clone);
-    html2pdf().from(wrap).set({margin:0,filename:`resumo-${i+1}.pdf`,
-    image:{type:'jpeg',quality:1},html2canvas:{scale:2,useCORS:true},
-    jsPDF:{unit:'px',format:[1000,800],orientation:'landscape'}}).save();
-  });
-}
-
-function enviarWhatsapp(){
-  const cards=document.querySelectorAll('.card');
-  let msg="📊 *Resumo Financeiro - Grupo DV*\n\n";
-  cards.forEach(c=>{
-    msg+=`*${c.querySelector('h2').innerText}*\n`;
-    c.querySelectorAll('li').forEach(li=>msg+=`• ${li.innerText}\n`);
-    msg+='\n';
-  });
-  window.open(`https://wa.me/5577999761436?text=${encodeURIComponent(msg)}`,'_blank');
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  const hoje=new Date(),ontem=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-1);
-  document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
-  carregar();
+  const hoje=new Date(),ini=new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-30);
+  document.getElementById('inicio').value=ini.toISOString().slice(0,10);
+  document.getElementById('fim').value=hoje.toISOString().slice(0,10);
 });
-document.getElementById('themeToggle').onclick=()=>{
-  const cur=document.documentElement.getAttribute('data-theme')||'light';
-  const next=cur==='light'?'dark':'light';
-  document.documentElement.setAttribute('data-theme',next);
-  localStorage.setItem('dv_theme',next);
-};
 </script>
 </body>
 </html>
