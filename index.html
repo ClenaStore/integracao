@@ -106,8 +106,7 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
 
 <script>
 const empresas=[
-  {nome:"CARNEIRO MERCATTO RESTAURANTE",chave:"VAREJO_URL_MERCATTO"},
-  {nome:"CARNEIRO MERCATTO EMPÓRIO",chave:"VAREJO_URL_MERCATTO"},
+  {nome:"CARNEIRO MERCATTO",chave:"VAREJO_URL_MERCATTO"},
   {nome:"DELICIA GOURMET",chave:"VAREJO_URL_DELICIA"},
   {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA"},
   {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA"}
@@ -197,8 +196,7 @@ function atualizarCard(empresa,json,animar=false){
   const ul=card.querySelector('ul');
   const valorEl=card.querySelector('.valor');
   ul.innerHTML="";
-  const itens=json.items||[];
-  const formas={};let total=0;
+  const itens=json.items||[];const formas={};let total=0;
   itens.forEach(v=>{
     const val=Number(v.valorTotal||0);total+=val;
     (v.finalizacoes||[]).forEach(f=>{
