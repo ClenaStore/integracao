@@ -105,23 +105,24 @@ footer{text-align:center;color:var(--muted);font-size:.8rem;padding:25px 0 40px}
 <footer>© 2025 Grupo DV</footer>
 
 <script>
-const empresas=[
-  {nome:"CARNEIRO MERCATTO",chave:"VAREJO_URL_MERCATTO"},
-  {nome:"DELICIA GOURMET",chave:"VAREJO_URL_DELICIA"},
-  {nome:"PADARIA DELICIA",chave:"VAREJO_URL_PADARIA"},
-  {nome:"VILLA GOURMET",chave:"VAREJO_URL_VILLA"}
+const empresas = [
+  { nome: "CARNEIRO MERCATTO", chave: "VAREJO_URL_MERCATTO" },
+  { nome: "DELICIA GOURMET", chave: "VAREJO_URL_DELICIA" },
+  { nome: "PADARIA DELICIA", chave: "VAREJO_URL_PADARIA" },
+  { nome: "VILLA GOURMET", chave: "VAREJO_URL_VILLA" }
 ];
 
-const emojiMap={
-  DINHEIRO:"💵",PIX:"💲",CREDITO:"💳",DÉBITO:"🏦",DEBITO:"🏦",
-  VOUCHER:"🎟️",CONSUMO:"🍽️",BOLETO:"📄",ONLINE:"💻",
-  TRANSFERENCIA:"🏛️",BONIFICACAO:"🎁",SOCIO:"🧑‍🤝‍🧑",ERROS:"🧯",OUTROS:"📦"
+const emojiMap = {
+  DINHEIRO: "💵", PIX: "💲", CREDITO: "💳", DÉBITO: "🏦", DEBITO: "🏦",
+  VOUCHER: "🎟️", CONSUMO: "🍽️", BOLETO: "📄", ONLINE: "💻",
+  TRANSFERENCIA: "🏛️", BONIFICACAO: "🎁", SOCIO: "🧑‍🤝‍🧑", ERROS: "🧯", OUTROS: "📦"
 };
 
-const brl=v=>(Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-function getEmoji(nome){
-  const n=nome.toUpperCase();
-  for(const k in emojiMap){ if(n.includes(k)) return emojiMap[k]; }
+const brl = v => (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+function getEmoji(nome) {
+  const n = nome.toUpperCase();
+  for (const k in emojiMap) if (n.includes(k)) return emojiMap[k];
   return "💠";
 }
 
@@ -151,42 +152,50 @@ function addCard(emp){
 }
 
 async function carregar(force=false){
-  const data=document.getElementById('dataFiltro').value||new Date(Date.now()-86400000).toISOString().slice(0,10);
-  const cacheKey="resumo_"+data;
-  const painel=document.getElementById('painel');
-  painel.innerHTML="";
+  const data = document.getElementById('dataFiltro').value || new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const cacheKey = "resumo_"+data;
+  const painel = document.getElementById('painel');
+  painel.innerHTML = "";
   empresas.forEach(addCard);
-  const progress=document.getElementById('progress');
-  progress.style.width='0%';
+  const progress = document.getElementById('progress');
+  progress.style.width = '0%';
 
   if(!force && localStorage.getItem(cacheKey)){
-    const cache=JSON.parse(localStorage.getItem(cacheKey));
-    cache.forEach(d=>atualizarCard(d.empresa,d.json));
+    const cache = JSON.parse(localStorage.getItem(cacheKey));
+    cache.forEach(d => atualizarCard(d.empresa,d.json));
     progress.style.width='100%';
     return;
   }
 
-  const promessas=empresas.map(async(emp)=>{
+  const promessas = empresas.map(async (emp) => {
     const card=document.getElementById('card_'+emp.chave);
     const ul=card.querySelector('ul');
     ul.innerHTML="<li>🔄 Login...</li>";
-    try{
-      const login=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({empresa:emp.chave})});
-      const {accessToken}=await login.json();
+    try {
+      const login = await fetch('/api/login', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({empresa:emp.chave})
+      });
+      const { accessToken } = await login.json();
       ul.innerHTML+="<li>📦 Buscando dados...</li>";
-      const resp=await fetch('/api/recebimentos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})});
-      const json=await resp.json();
+      const resp = await fetch('/api/recebimentos', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({token:accessToken,empresa:emp.chave,dataInicio:data,dataFim:data})
+      });
+      const json = await resp.json();
       atualizarCard(emp,json,true);
       ul.innerHTML+="<li>✅ Finalizado.</li>";
       return {empresa:emp,json};
-    }catch(e){
+    } catch(e) {
       ul.innerHTML=`<li style='color:red'>Erro: ${e.message}</li>`;
       return {empresa:emp,error:e.message};
     }
   });
 
-  const results=await Promise.allSettled(promessas);
-  const valid=results.filter(r=>r.value).map(r=>r.value);
+  const results = await Promise.allSettled(promessas);
+  const valid = results.filter(r=>r.value).map(r=>r.value);
   localStorage.setItem(cacheKey,JSON.stringify(valid));
   progress.style.width='100%';
 }
@@ -196,7 +205,8 @@ function atualizarCard(empresa,json,animar=false){
   const ul=card.querySelector('ul');
   const valorEl=card.querySelector('.valor');
   ul.innerHTML="";
-  const itens=json.items||[];const formas={};let total=0;
+  const itens=json.items||[];
+  const formas={};let total=0;
   itens.forEach(v=>{
     const val=Number(v.valorTotal||0);total+=val;
     (v.finalizacoes||[]).forEach(f=>{
@@ -264,6 +274,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('dataFiltro').value=ontem.toISOString().slice(0,10);
   carregar();
 });
+
 document.getElementById('themeToggle').onclick=()=>{
   const cur=document.documentElement.getAttribute('data-theme')||'light';
   const next=cur==='light'?'dark':'light';
